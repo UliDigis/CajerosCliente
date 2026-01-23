@@ -1,0 +1,48 @@
+ body {
+                background: #f6f7fb;
+            }
+            .auth-shell {
+                min-height: 100vh;
+            }
+            .auth-card {
+                border: 1px solid rgba(0,0,0,.08);
+                border-radius: 1rem;
+            }
+            .brand-badge{
+                width: 42px;
+                height: 42px;
+                border-radius: 14px;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+            }
+            .muted {
+                color: #64748b;
+            }
+            .form-control, .input-group-text, .btn {
+                border-radius: .75rem;
+            }
+            .input-group > .input-group-text {
+                border-top-right-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+            .input-group > .form-control {
+                border-top-left-radius: 0;
+                border-bottom-left-radius: 0;
+            }
+            .input-group > .btn {
+                border-top-left-radius: 0;
+                border-bottom-left-radius: 0;
+            }
+            .auth-title {
+                letter-spacing: .2px;
+            }
+
+            /* un poquito mejor en pantallas muy pequeñas */
+            @media (max-width: 360px) {
+                .brand-badge {
+                    width: 38px;
+                    height: 38px;
+                    border-radius: 12px;
+                }
+            }
