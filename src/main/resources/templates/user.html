@@ -1,0 +1,287 @@
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Usuarios | Administración', 'users', ~{::content})}">
+
+<th:block th:fragment="content">
+
+  <style>
+    .soft-muted { color:#64748b; }
+    .chip {
+      display:inline-flex; align-items:center; gap:.4rem;
+      padding:.35rem .6rem; border-radius:999px;
+      background:rgba(2,6,23,.04); border:1px solid rgba(0,0,0,.06);
+      font-size:.85rem;
+    }
+    .kpi-mini{
+      border:1px solid rgba(0,0,0,.08);
+      border-radius:1rem;
+      background:#fff;
+    }
+  </style>
+
+  <!-- Alerts -->
+  <div class="alert alert-danger d-flex align-items-center" role="alert" th:if="${errorMessage}">
+    <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
+    <div th:text="${errorMessage}">Ha ocurrido un error.</div>
+  </div>
+
+  <div class="alert alert-success d-flex align-items-center" role="alert" th:if="${successMessage}">
+    <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>
+    <div th:text="${successMessage}">Operación exitosa.</div>
+  </div>
+
+  <!-- Header -->
+  <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+    <div>
+      <h1 class="h4 mb-1">Usuarios</h1>
+      <p class="soft-muted mb-0 small">Consulta, desactiva o elimina usuarios del sistema.</p>
+    </div>
+
+    <div class="d-flex gap-2">
+      <!-- Opcional: crear usuario -->
+      <!--
+      <a class="btn btn-primary" th:href="@{/users/new}">
+        <i class="bi bi-person-plus me-2"></i>Nuevo usuario
+      </a>
+      -->
+      <a class="btn btn-outline-secondary" th:href="@{/dashboard}">
+        <i class="bi bi-grid me-2"></i>Volver al dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Mini KPIs (opcionales) -->
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-md-4">
+      <div class="kpi-mini p-3 shadow-sm">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="small soft-muted">Total usuarios</div>
+            <div class="fs-5 fw-bold" th:text="${userCount} ?: 0">0</div>
+          </div>
+          <span class="chip"><i class="bi bi-people"></i> Usuarios</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="kpi-mini p-3 shadow-sm">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="small soft-muted">Activos</div>
+            <div class="fs-5 fw-bold" th:text="${activeUserCount} ?: 0">0</div>
+          </div>
+          <span class="chip"><i class="bi bi-person-check"></i> Activos</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="kpi-mini p-3 shadow-sm">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="small soft-muted">Inactivos</div>
+            <div class="fs-5 fw-bold" th:text="${inactiveUserCount} ?: 0">0</div>
+          </div>
+          <span class="chip"><i class="bi bi-person-x"></i> Inactivos</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
+        <form class="d-flex flex-wrap gap-2 align-items-center" th:action="@{/users}" method="get">
+          <div class="input-group" style="min-width:260px;">
+            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+            <input class="form-control bg-light border-start-0"
+                   type="search"
+                   name="q"
+                   placeholder="Buscar (nombre/email)"
+                   aria-label="Buscar usuarios"
+                   th:value="${param.q}">
+          </div>
+
+          <select class="form-select" name="status" style="min-width:180px;" aria-label="Filtrar por estado">
+            <option value="" th:selected="${param.status == null || param.status == ''}">Todos</option>
+            <option value="ACTIVE" th:selected="${param.status == 'ACTIVE'}">Activos</option>
+            <option value="INACTIVE" th:selected="${param.status == 'INACTIVE'}">Inactivos</option>
+          </select>
+
+          <select class="form-select" name="role" style="min-width:180px;" aria-label="Filtrar por rol">
+            <option value="" th:selected="${param.role == null || param.role == ''}">Todos los roles</option>
+            <option value="ADMIN" th:selected="${param.role == 'ADMIN'}">ADMIN</option>
+            <option value="USER" th:selected="${param.role == 'USER'}">USER</option>
+          </select>
+
+          <button class="btn btn-outline-secondary" type="submit">
+            <i class="bi bi-funnel me-1"></i>Aplicar
+          </button>
+
+          <a class="btn btn-outline-secondary" th:href="@{/users}">
+            <i class="bi bi-x-circle me-1"></i>Limpiar
+          </a>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="card shadow-sm">
+    <div class="card-header bg-white d-flex flex-wrap gap-2 align-items-center justify-content-between">
+      <div class="fw-semibold">Listado de usuarios</div>
+      <div class="small soft-muted">
+        <span th:if="${users != null}" th:text="${#lists.size(users)} + ' resultados'">0 resultados</span>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+        <tr>
+          <th>Usuario</th>
+          <th>Email</th>
+          <th style="white-space:nowrap;">Rol</th>
+          <th style="white-space:nowrap;">Estado</th>
+          <th style="white-space:nowrap;">Alta</th>
+          <th class="text-end" style="white-space:nowrap;">Acciones</th>
+        </tr>
+        </thead>
+
+        <tbody th:if="${users == null || #lists.isEmpty(users)}">
+        <tr>
+          <td colspan="6" class="text-center py-5">
+            <i class="bi bi-inbox text-secondary fs-2" aria-hidden="true"></i>
+            <div class="mt-2 fw-semibold">No hay usuarios</div>
+            <div class="small soft-muted">Ajusta filtros o intenta otra búsqueda.</div>
+          </td>
+        </tr>
+        </tbody>
+
+        <tbody th:if="${users != null && !#lists.isEmpty(users)}">
+        <tr th:each="u : ${users}">
+          <td>
+            <div class="d-flex gap-2 align-items-center">
+              <span class="rounded-circle bg-light border d-inline-flex align-items-center justify-content-center"
+                    style="width:34px;height:34px;">
+                <i class="bi bi-person"></i>
+              </span>
+              <div>
+                <div class="fw-semibold" th:text="${u.fullName} ?: 'Sin nombre'">John Doe</div>
+                <div class="small soft-muted" th:text="'ID: ' + ${u.id}">ID: 12</div>
+              </div>
+            </div>
+          </td>
+
+          <td th:text="${u.email} ?: '—'">john@demo.com</td>
+
+          <td>
+            <span class="badge text-bg-light border" th:text="${u.role} ?: 'USER'">ADMIN</span>
+          </td>
+
+          <td>
+            <span class="badge"
+                  th:classappend="${u.active} ? ' bg-success' : ' bg-secondary'"
+                  th:text="${u.active} ? 'Activo' : 'Inactivo'">Activo</span>
+          </td>
+
+          <td class="small soft-muted" th:text="${u.createdAtFormatted} ?: '—'">—</td>
+
+          <td class="text-end">
+            <div class="btn-group">
+              <a class="btn btn-sm btn-outline-primary"
+                 th:href="@{/users/{id}(id=${u.id})}">
+                <i class="bi bi-eye me-1"></i>Detalle
+              </a>
+
+              <form th:action="@{/users/{id}/toggle(id=${u.id})}" method="post" class="d-inline">
+                <input type="hidden"
+                       th:if="${_csrf != null}"
+                       th:name="${_csrf.parameterName}"
+                       th:value="${_csrf.token}">
+                <button class="btn btn-sm btn-outline-secondary" type="submit"
+                        th:title="${u.active} ? 'Desactivar' : 'Activar'">
+                  <i class="bi" th:classappend="${u.active} ? ' bi-person-x' : ' bi-person-check'"></i>
+                </button>
+              </form>
+
+              <button class="btn btn-sm btn-outline-danger" type="button"
+                      data-bs-toggle="modal" data-bs-target="#deleteUserModal"
+                      th:attr="data-user-id=${u.id},data-user-name=${u.fullName}">
+                <i class="bi bi-trash"></i>
+                <span class="visually-hidden">Eliminar</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+      <div class="small soft-muted">Tip: desactiva usuarios en vez de eliminarlos si solo quieres bloquear acceso.</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="text-center small soft-muted mt-4">
+    © <span th:text="${#dates.format(#dates.createNow(),'yyyy')}">2026</span> Metis — Gestión de usuarios
+  </div>
+
+  <!-- MODAL: Eliminar usuario -->
+  <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteUserModalLabel">Eliminar usuario</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+
+        <form th:action="@{/users/__id__/delete}" method="post" id="deleteUserForm">
+          <div class="modal-body">
+            <input type="hidden"
+                   th:if="${_csrf != null}"
+                   th:name="${_csrf.parameterName}"
+                   th:value="${_csrf.token}">
+
+            <p class="mb-2">
+              ¿Seguro que deseas eliminar a <span class="fw-semibold" id="userNameLabel">—</span>?
+            </p>
+
+            <div class="alert alert-warning mb-0" role="alert">
+              <i class="bi bi-exclamation-triangle me-2"></i> Esta acción es permanente.
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-trash me-1"></i>Eliminar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const deleteBase = '/users/__id__/delete';
+
+    document.addEventListener('show.bs.modal', function (event) {
+      const modal = event.target;
+      const trigger = event.relatedTarget;
+      if (!modal) return;
+
+      if (modal.id === 'deleteUserModal') {
+        const id = trigger?.getAttribute('data-user-id') || '1';
+        const name = trigger?.getAttribute('data-user-name') || '—';
+
+        document.getElementById('userNameLabel').textContent = name;
+        document.getElementById('deleteUserForm').action = deleteBase.replace('__id__', id);
+      }
+    });
+  </script>
+
+</th:block>
+</html>
