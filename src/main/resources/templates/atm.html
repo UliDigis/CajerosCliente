@@ -1,291 +1,133 @@
 <!doctype html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout :: layout('Cajeros | Administración', 'atms', ~{::content})}">
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout :: layout('Cajeros automáticos | Banco Forjadores', 'atms', ~{::content})}">
 
     <th:block th:fragment="content">
 
-        <style>
-            .soft-muted {
-                color:#64748b;
-            }
-            .chip {
-                display:inline-flex;
-                align-items:center;
-                gap:.4rem;
-                padding:.35rem .6rem;
-                border-radius:999px;
-                background:rgba(2,6,23,.04);
-                border:1px solid rgba(0,0,0,.06);
-                font-size:.85rem;
-            }
-            .kpi-mini{
-                border:1px solid rgba(0,0,0,.08);
-                border-radius:1rem;
-                background:#fff;
-            }
-        </style>
-
-        <!-- Alerts -->
-        <div class="alert alert-danger d-flex align-items-center" role="alert" th:if="${errorMessage}">
-            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
-            <div th:text="${errorMessage}">Ha ocurrido un error.</div>
-        </div>
-
-        <div class="alert alert-success d-flex align-items-center" role="alert" th:if="${successMessage}">
-            <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>
-            <div th:text="${successMessage}">Operación exitosa.</div>
-        </div>
-
-        <!-- Header -->
-        <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+        <div class="d-flex align-items-center justify-content-between mb-3">
             <div>
-                <h1 class="h4 mb-1">Cajeros</h1>
-                <p class="soft-muted mb-0 small">Administra saldos, estados y recargas de tus cajeros.</p>
+                <h1 class="h4 mb-1">Cajeros automáticos</h1>
+                <div class="text-secondary small">Selecciona un cajero para continuar</div>
             </div>
 
-            <div class="d-flex gap-2">
-                <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#rechargeModal">
-                    <i class="bi bi-plus-circle me-2"></i>Recarga rápida
-                </button>
-                <a class="btn btn-outline-secondary" th:href="@{/dashboard}">
-                    <i class="bi bi-grid me-2"></i>Volver al dashboard
-                </a>
-            </div>
-        </div>
-
-        <div class="row g-3 mb-3">
-            <div class="col-12 col-md-4">
-                <div class="kpi-mini p-3 shadow-sm">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="small soft-muted">Total cajeros</div>
-                            <div class="fs-5 fw-bold" th:text="${atmCount} ?: 0">0</div>
-                        </div>
-                        <span class="chip"><i class="bi bi-bank"></i> Cajeros</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-4">
-                <div class="kpi-mini p-3 shadow-sm">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="small soft-muted">Activos</div>
-                            <div class="fs-5 fw-bold" th:text="${activeAtmCount} ?: 0">0</div>
-                        </div>
-                        <span class="chip"><i class="bi bi-check-circle"></i> Cajeros</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-4">
-                <div class="kpi-mini p-3 shadow-sm">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="small soft-muted">Saldo total</div>
-                            <div class="fs-5 fw-bold" th:text="${totalAtmBalanceFormatted} ?: '$0.00'">$0.00</div>
-                        </div>
-                        <span class="chip"><i class="bi bi-cash-stack"></i> Total</span>
-                    </div>
-                </div>
+            <!-- ADMIN: recarga masiva -->
+            <div sec:authorize="hasRole('ADMIN')">
+                <form id="formRecargarTodos" th:action="@{/admin/cajeros/recargar-todos}" method="post">
+                    <button class="btn btn-warning" type="button" onclick="confirmRecargarTodos()">
+                        <i class="bi bi-cash-stack me-1"></i>Recargar todos
+                    </button>
+                </form>
             </div>
         </div>
 
-        <!-- Filters -->
-        <div class="card shadow-sm mb-3">
-            <div class="card-body">
-                <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
-                    <form class="d-flex flex-wrap gap-2 align-items-center" th:action="@{/atms}" method="get">
-                        <div class="input-group" style="min-width:260px;">
-                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
-                            <input class="form-control bg-light border-start-0"
-                                   type="search"
-                                   name="q"
-                                   placeholder="Buscar (ID/ubicación)"
-                                   aria-label="Buscar cajeros"
-                                   th:value="${param.q}">
-                        </div>
+        <div class="row g-3">
 
-                        <select class="form-select" name="status" style="min-width:180px;" aria-label="Filtrar por estado">
-                            <option value="" th:selected="${param.status == null || param.status == ''}">Todos</option>
-                            <option value="ACTIVE" th:selected="${param.status == 'ACTIVE'}">Activos</option>
-                            <option value="INACTIVE" th:selected="${param.status == 'INACTIVE'}">Inactivos</option>
-                        </select>
-
-                        <button class="btn btn-outline-secondary" type="submit">
-                            <i class="bi bi-funnel me-1"></i>Aplicar
-                        </button>
-
-                        <a class="btn btn-outline-secondary" th:href="@{/atms}">
-                            <i class="bi bi-x-circle me-1"></i>Limpiar
-                        </a>
-                    </form>
-
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#rechargeModal">
-                            <i class="bi bi-plus-circle me-1"></i>Recargar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Table -->
-        <div class="card shadow-sm">
-            <div class="card-header bg-white d-flex flex-wrap gap-2 align-items-center justify-content-between">
-                <div class="fw-semibold">Listado de cajeros</div>
-                <div class="small soft-muted">
-                    <span th:if="${atms != null}" th:text="${#lists.size(atms)} + ' resultados'">0 resultados</span>
-                </div>
-            </div>
-
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th style="white-space:nowrap;">ID</th>
-                            <th>Ubicación</th>
-                            <th class="text-end" style="white-space:nowrap;">Saldo</th>
-                            <th style="white-space:nowrap;">Estado</th>
-                            <th style="white-space:nowrap;">Última recarga</th>
-                            <th class="text-end" style="white-space:nowrap;">Acciones</th>
-                        </tr>
-                    </thead>
-
-                    <tbody th:if="${atms == null || #lists.isEmpty(atms)}">
-                        <tr>
-                            <td colspan="6" class="text-center py-5">
-                                <i class="bi bi-inbox text-secondary fs-2" aria-hidden="true"></i>
-                                <div class="mt-2 fw-semibold">No hay cajeros</div>
-                                <div class="small soft-muted">Ajusta filtros o registra un nuevo cajero.</div>
-                            </td>
-                        </tr>
-                    </tbody>
-
-                    <tbody th:if="${atms != null && !#lists.isEmpty(atms)}">
-                        <tr th:each="atm : ${atms}">
-                            <td class="fw-semibold" th:text="${atm.code}">ATM-001</td>
-
-                            <td>
-                                <div class="fw-semibold" th:text="${atm.location}">Sucursal Centro</div>
-                                <div class="small soft-muted" th:text="${atm.city} ?: ''">CDMX</div>
-                            </td>
-
-                            <td class="text-end fw-semibold" th:text="${atm.balanceFormatted} ?: '$0.00'">$12,450.00</td>
-
-                            <td>
-                                <span class="badge"
-                                      th:classappend="${atm.active} ? ' bg-success' : ' bg-secondary'"
-                                      th:text="${atm.active} ? 'Activo' : 'Inactivo'">Activo</span>
-                            </td>
-
-                            <td class="small soft-muted" th:text="${atm.lastRechargeAtFormatted} ?: '—'">—</td>
-
-                            <td class="text-end">
-                                <div class="btn-group">
-                                    <a class="btn btn-sm btn-outline-primary"
-                                       th:href="@{/atms/{id}(id=${atm.id})}">
-                                        <i class="bi bi-eye me-1"></i>Ver
-                                    </a>
-
-                                    <button class="btn btn-sm btn-primary"
-                                            type="button"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#rechargeModal"
-                                            th:attr="data-atm-id=${atm.id},data-atm-code=${atm.code},data-atm-balance=${atm.balanceFormatted}">
-                                        <i class="bi bi-plus-circle me-1"></i>Recargar
-                                    </button>
-
-                                    <form th:action="@{/atms/{id}/toggle(id=${atm.id})}" method="post" class="d-inline">
-                                        <input type="hidden"
-                                               th:if="${_csrf != null}"
-                                               th:name="${_csrf.parameterName}"
-                                               th:value="${_csrf.token}">
-                                        <button class="btn btn-sm btn-outline-secondary" type="submit"
-                                                th:title="${atm.active} ? 'Desactivar' : 'Activar'">
-                                            <i class="bi" th:classappend="${atm.active} ? ' bi-pause-circle' : ' bi-play-circle'"></i>
-                                        </button>
-                                    </form>
+            <div class="col-12 col-md-6 col-xl-4" th:each="atm : ${atms}">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start justify-content-between">
+                            <div>
+                                <div class="fw-bold" th:text="${atm.nombre}">ATM Centro</div>
+                                <div class="small text-secondary" th:text="${atm.ubicacion}">Av. Principal 123</div>
+                                <div class="small text-secondary">
+                                    Código: <span th:text="${atm.codigo}">ATM-001</span>
                                 </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                            </div>
+                            <span class="badge text-bg-light border" th:text="${atm.estado}">ACTIVO</span>
+                        </div>
 
-        <!-- Footer -->
-        <div class="text-center small soft-muted mt-4">
-            © <span th:text="${#dates.format(#dates.createNow(),'yyyy')}">2026</span> Banco Forjadores — Gestión de cajeros
-        </div>
+                        <div class="mt-3 d-flex flex-wrap gap-2">
 
-        <!-- MODAL: Recargar cajero -->
-        <div class="modal fade" id="rechargeModal" tabindex="-1" aria-labelledby="rechargeModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="rechargeModalLabel">Recargar cajero</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                            <!-- CLIENTE -->
+                            <a class="btn btn-primary"
+                               sec:authorize="hasRole('CLIENTE')"
+                               th:href="@{'/atm/' + ${atm.codigo}}">
+                                Seleccionar
+                            </a>
+
+                            <!-- ADMIN: botones adicionales -->
+                            <div sec:authorize="hasRole('ADMIN')" class="d-flex flex-wrap gap-2">
+
+                                <a class="btn btn-outline-secondary"
+                                   th:href="@{'/atm/' + ${atm.codigo}}">
+                                    Ver
+                                </a>
+
+                                <form class="m-0"
+                                      th:id="${'formRecargar_' + atm.codigo}"
+                                      th:action="@{'/admin/cajeros/' + ${atm.codigo} + '/recargar'}"
+                                      method="post">
+                                    <button class="btn btn-outline-warning" type="button"
+                                            th:attr="data-codigo=${atm.codigo},data-nombre=${atm.nombre}"
+                                            onclick="confirmRecargarUno(this)">
+                                        <i class="bi bi-cash-coin me-1"></i>Recargar cajero
+                                    </button>
+                                </form>
+
+                            </div>
+
+                        </div>
                     </div>
-
-                    <form th:action="@{/atms/__id__/recharge}" method="post" id="rechargeForm">
-                        <div class="modal-body">
-                            <input type="hidden"
-                                   th:if="${_csrf != null}"
-                                   th:name="${_csrf.parameterName}"
-                                   th:value="${_csrf.token}">
-
-                            <div class="mb-2">
-                                <div class="small soft-muted">Cajero</div>
-                                <div class="fw-semibold" id="atmCodeLabel">—</div>
-                            </div>
-
-                            <div class="mb-3">
-                                <div class="small soft-muted">Saldo actual</div>
-                                <div class="fw-semibold" id="atmBalanceLabel">—</div>
-                            </div>
-
-                            <label for="amount" class="form-label">Monto a recargar</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input id="amount" name="amount" type="number" class="form-control"
-                                       min="1" step="1" placeholder="Ej: 500" required>
-                            </div>
-                            <div class="form-text">La recarga suma al saldo del cajero.</div>
-                        </div>
-
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check2-circle me-1"></i>Confirmar
-                            </button>
-                        </div>
-                    </form>
                 </div>
             </div>
+
         </div>
 
+        <div th:if="${param.ok}" class="d-none" id="msgOk" th:text="${param.ok}">OK</div>
+        <div th:if="${param.err}" class="d-none" id="msgErr" th:text="${param.err}">ERR</div>
+
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
-            // Base para action en modal (no depende de th:action porque no existe en el DOM final)
-            const rechargeBase = '/atms/__id__/recharge';
+                                                function confirmRecargarUno(btn) {
+                                                    const codigo = btn.getAttribute('data-codigo');
+                                                    const nombre = btn.getAttribute('data-nombre');
 
-            document.addEventListener('show.bs.modal', function (event) {
-                const modal = event.target;
-                const trigger = event.relatedTarget;
-                if (!modal)
-                    return;
+                                                    Swal.fire({
+                                                        title: 'Recargar cajero',
+                                                        text: '¿Deseas recargar el cajero "' + nombre + '" (' + codigo + ')?',
+                                                        icon: 'warning',
+                                                        showCancelButton: true,
+                                                        confirmButtonText: 'Sí, recargar',
+                                                        cancelButtonText: 'Cancelar'
+                                                    }).then((r) => {
+                                                        if (!r.isConfirmed)
+                                                            return;
+                                                        const form = document.getElementById('formRecargar_' + codigo);
+                                                        if (form)
+                                                            form.submit();
+                                                    });
+                                                }
 
-                if (modal.id === 'rechargeModal') {
-                    const id = trigger?.getAttribute('data-atm-id') || '1';
-                    const code = trigger?.getAttribute('data-atm-code') || 'ATM-—';
-                    const balance = trigger?.getAttribute('data-atm-balance') || '—';
+                                                function confirmRecargarTodos() {
+                                                    Swal.fire({
+                                                        title: 'Recargar todos',
+                                                        text: '¿Deseas recargar todos los cajeros activos?',
+                                                        icon: 'warning',
+                                                        showCancelButton: true,
+                                                        confirmButtonText: 'Sí, recargar',
+                                                        cancelButtonText: 'Cancelar'
+                                                    }).then((r) => {
+                                                        if (!r.isConfirmed)
+                                                            return;
+                                                        const form = document.getElementById('formRecargarTodos');
+                                                        if (form)
+                                                            form.submit();
+                                                    });
+                                                }
 
-                    document.getElementById('atmCodeLabel').textContent = code;
-                    document.getElementById('atmBalanceLabel').textContent = balance;
+                                                (function showToastFromParams() {
+                                                    const ok = document.getElementById('msgOk');
+                                                    const err = document.getElementById('msgErr');
 
-                    document.getElementById('rechargeForm').action = rechargeBase.replace('__id__', id);
-                }
-            });
+                                                    if (ok && ok.textContent) {
+                                                        Swal.fire({icon: 'success', title: ok.textContent});
+                                                    }
+                                                    if (err && err.textContent) {
+                                                        Swal.fire({icon: 'error', title: err.textContent});
+                                                    }
+                                                })();
         </script>
 
     </th:block>

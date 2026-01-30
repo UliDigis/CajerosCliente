@@ -32,7 +32,7 @@
             }
         </style>
 
-        <!-- Alerts -->
+        Alerts 
         <div class="alert alert-danger d-flex align-items-center" role="alert" th:if="${errorMessage}">
             <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
             <div th:text="${errorMessage}">Ha ocurrido un error.</div>
@@ -43,7 +43,7 @@
             <div th:text="${successMessage}">Operación exitosa.</div>
         </div>
 
-        <!-- Header -->
+        Header 
         <div class="d-flex flex-wrap align-items-start justify-content-between gap-2">
             <div>
                 <h1 class="h4 mb-1">Dashboard</h1>
@@ -60,7 +60,6 @@
             </div>
         </div>
 
-        <!-- KPI row (loading) -->
         <div class="row g-3 mt-2" th:if="${loading}">
             <div class="col-12 col-md-6 col-xl-3" th:each="i : ${#numbers.sequence(1,4)}">
                 <div class="card shadow-sm">
@@ -75,7 +74,7 @@
             </div>
         </div>
 
-        <!-- KPI row (data) -->
+        KPI row (data) 
         <div class="row g-3 mt-2" th:if="${!loading}">
             <div class="col-12 col-md-6 col-xl-3">
                 <div class="card shadow-sm card-kpi">
@@ -137,8 +136,7 @@
                 </div>
             </div>
         </div>
-
-        <!-- Middle row (chart + activity) -->
+ 
         <div class="row g-3 mt-1">
             <div class="col-12 col-lg-8">
                 <div class="card shadow-sm">
@@ -205,7 +203,7 @@
             </div>
         </div>
 
-        <!-- TABS: Cajeros / Usuarios -->
+        
         <div id="tabsArea" class="card shadow-sm mt-3">
             <div class="card-header bg-white d-flex flex-wrap gap-2 align-items-center justify-content-between">
                 <div class="fw-semibold">Gestión</div>
@@ -229,7 +227,7 @@
             <div class="card-body">
                 <div class="tab-content" id="adminTabsContent">
 
-                    <!-- CAJEROS -->
+                    
                     <div class="tab-pane fade show active" id="pane-atms" role="tabpanel" aria-labelledby="tab-atms" tabindex="0">
 
                         <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3">
@@ -319,7 +317,7 @@
                         </div>
                     </div>
 
-                    <!-- USUARIOS -->
+                    
                     <div class="tab-pane fade" id="pane-users" role="tabpanel" aria-labelledby="tab-users" tabindex="0">
 
                         <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3">
@@ -419,12 +417,12 @@
             </div>
         </div>
 
-        <!-- Footer -->
+        
         <div class="text-center small soft-muted mt-4">
             © <span th:text="${#dates.format(#dates.createNow(),'yyyy')}">2026</span> Metis — Administración de cajeros y usuarios
         </div>
 
-        <!-- MODAL: Recargar cajero -->
+        
         <div class="modal fade" id="rechargeModal" tabindex="-1" aria-labelledby="rechargeModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
@@ -470,7 +468,7 @@
             </div>
         </div>
 
-        <!-- MODAL: Eliminar usuario -->
+        
         <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">

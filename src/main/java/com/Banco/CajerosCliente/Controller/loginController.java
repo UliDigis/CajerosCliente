@@ -1,19 +1,46 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.Banco.CajerosCliente.Controller;
 
+import com.Banco.CajerosCliente.Service.AuthClientService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequestMapping("/login")
 public class loginController {
-    
+
+    private final AuthClientService authClientService;
+
+    public loginController(AuthClientService authClientService) {
+        this.authClientService = authClientService;
+    }
+
     @GetMapping
-    public String login(){
+    public String login() {
         return "login";
+    }
+    
+    @PostMapping
+    public String doLogin(@RequestParam("correo") String correo,
+            @RequestParam("password") String password,
+            HttpServletResponse response) {
+
+        try {
+            String token = authClientService.login(correo, password);
+
+            Cookie cookie = new Cookie("JWT", token);
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            cookie.setMaxAge(60 * 60);
+            response.addCookie(cookie);
+
+            return "redirect:/dashboard";
+        } catch (Exception ex) {
+            return "redirect:/login?error";
+        }
     }
 }
