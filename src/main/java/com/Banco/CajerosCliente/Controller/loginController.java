@@ -23,7 +23,7 @@ public class loginController {
     public String login() {
         return "login";
     }
-    
+
     @PostMapping
     public String doLogin(@RequestParam("correo") String correo,
             @RequestParam("password") String password,
@@ -42,5 +42,21 @@ public class loginController {
         } catch (Exception ex) {
             return "redirect:/login?error";
         }
+    }
+
+    /**
+     * Logout para pruebas y producción: - Elimina la cookie JWT (MaxAge=0). -
+     * Redirige a /login.
+     */
+    @PostMapping("/logout")
+    public String logout(HttpServletResponse response) {
+
+        Cookie cookie = new Cookie("JWT", "");
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+
+        return "redirect:/login?logout";
     }
 }

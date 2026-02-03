@@ -16,21 +16,27 @@ public class CajeroAdminClientService {
      * CLIENTE: llama al SERVICE para recargar un cajero.
      */
     public void recargarCajero(String codigo, String token) {
-        restClient.post()
-                .uri("/admin/cajeros/{codigo}/recargar", codigo)
-                .header("Authorization", "Bearer " + token)
-                .retrieve()
-                .toBodilessEntity();
+
+        RestClient.RequestHeadersSpec<?> req = restClient.post()
+                .uri("/admin/cajeros/{codigo}/recargar", codigo);
+
+        if (token != null && !token.isBlank()) {
+            req = req.header("Authorization", "Bearer " + token);
+        }
+
+        req.retrieve().toBodilessEntity();
     }
 
-    /**
-     * CLIENTE: llama al SERVICE para recargar todos los cajeros.
-     */
     public void recargarTodos(String token) {
-        restClient.post()
-                .uri("/admin/cajeros/recargar-todos")
-                .header("Authorization", "Bearer " + token)
-                .retrieve()
-                .toBodilessEntity();
+
+        RestClient.RequestHeadersSpec<?> req = restClient.post()
+                .uri("/admin/cajeros/recargar-todos");
+
+        if (token != null && !token.isBlank()) {
+            req = req.header("Authorization", "Bearer " + token);
+        }
+
+        req.retrieve().toBodilessEntity();
     }
+
 }

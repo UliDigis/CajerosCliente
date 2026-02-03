@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout :: layout('Usuarios | Banco Forjadores', 'users', ~{::content})}">
+
+    <th:block th:fragment="content">
+
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+            <div>
+                <h1 class="h3 fw-bold mb-1">Gestión de Usuarios</h1>
+                <p class="text-muted small mb-0">Administra el acceso y los roles del sistema.</p>
+            </div>
+
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal" onclick="resetUserModal()">
+                <i class="bi bi-person-plus-fill me-2"></i>Nuevo Usuario
+            </button>
+        </div>
+
+        <div class="card shadow-sm border-0">
+
+            <div class="card-header bg-white py-3">
+                <form th:action="@{/users}" method="get" class="row g-2 align-items-center">
+                    <div class="col-12 col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" name="q" class="form-control border-start-0 bg-light" 
+                                   placeholder="Buscar por nombre o correo..." 
+                                   th:value="${param.q}">
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-outline-secondary">Filtrar</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Usuario</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th>Fecha Alta</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${users == null || #lists.isEmpty(users)}">
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <div class="mb-2"><i class="bi bi-people fs-1 opacity-25"></i></div>
+                                No se encontraron usuarios registrados.
+                            </td>
+                        </tr>
+
+                        <tr th:each="user : ${users}">
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold" 
+                                         style="width: 40px; height: 40px; font-size: 0.9rem;">
+                                        <span th:text="${#strings.substring(user.nombres,0,1)}">U</span>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark" th:text="${user.nombres + ' ' + user.apellidos}">Nombre Apellido</div>
+                                        <div class="small text-muted" th:text="${user.correo}">correo@ejemplo.com</div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <span class="badge border rounded-pill text-uppercase"
+                                      th:classappend="${user.rol == 'ADMIN'} ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : 'bg-light text-secondary border-light-subtle'"
+                                      th:text="${user.rol}">CLIENTE</span>
+                            </td>
+
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="d-inline-block rounded-circle" 
+                                          style="width: 8px; height: 8px;"
+                                          th:classappend="${user.estado == 1} ? 'bg-success' : 'bg-danger'"></span>
+                                    <span class="small" th:text="${user.estado == 1} ? 'Activo' : 'Inactivo'">Activo</span>
+                                </div>
+                            </td>
+
+                            <td class="small text-muted">
+                                <span th:text="${user.fechaAltaFormatted} ?: '--/--/----'">01/01/2026</span>
+                            </td>
+
+                            <td class="text-end pe-4">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        Opciones
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                        <li>
+                                            <button class="dropdown-item" type="button" 
+                                                    th:onclick="editUser([[${user}]])">
+                                                <i class="bi bi-pencil me-2 text-primary"></i>Editar
+                                            </button>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form th:action="@{'/users/' + ${user.idUsuario} + '/toggle'}" method="post">
+                                                <button class="dropdown-item" type="submit" 
+                                                        th:classappend="${user.estado == 1} ? 'text-danger' : 'text-success'">
+                                                    <i class="bi me-2" th:classappend="${user.estado == 1} ? 'bi-person-x' : 'bi-person-check'"></i>
+                                                    <span th:text="${user.estado == 1} ? 'Desactivar' : 'Activar'">Cambiar estado</span>
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card-footer bg-white py-3 border-top-0 d-flex justify-content-between align-items-center"
+                 th:if="${users != null && !#lists.isEmpty(users)}">
+                <div class="small text-muted">Mostrando registros</div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalTitle">Nuevo Usuario</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <form th:action="@{/users/save}" method="post">
+                        <div class="modal-body">
+                            <input type="hidden" id="userId" name="idUsuario">
+
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <label class="form-label small fw-bold">Nombres</label>
+                                    <input type="text" class="form-control" name="nombres" id="nombres" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-bold">Apellidos</label>
+                                    <input type="text" class="form-control" name="apellidos" id="apellidos" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small fw-bold">Correo Electrónico</label>
+                                    <input type="email" class="form-control" name="correo" id="correo" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small fw-bold">Rol</label>
+                                    <select class="form-select" name="idRol" id="idRol">
+                                        <option value="2">CLIENTE</option>
+                                        <option value="1">ADMIN</option>
+                                    </select>
+                                </div>
+                                <div class="col-12" id="divPassword">
+                                    <label class="form-label small fw-bold">Contraseña</label>
+                                    <input type="password" class="form-control" name="password" id="password" 
+                                           placeholder="Dejar vacío para mantener actual (en edición)">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light">
+                            <button type="button" class="btn btn-link text-decoration-none text-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary px-4">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+            function resetUserModal() {
+                document.getElementById('modalTitle').textContent = 'Nuevo Usuario';
+                document.getElementById('userId').value = '';
+                document.getElementById('nombres').value = '';
+                document.getElementById('apellidos').value = '';
+                document.getElementById('correo').value = '';
+                document.getElementById('idRol').value = '2'; // Default Cliente
+                document.getElementById('password').required = true;
+                document.getElementById('password').placeholder = '';
+            }
+
+            function editUser(userMap) {
+                // Llenar datos desde el Map recibido de Thymeleaf
+                document.getElementById('modalTitle').textContent = 'Editar Usuario';
+                document.getElementById('userId').value = userMap.idUsuario;
+                document.getElementById('nombres').value = userMap.nombres;
+                document.getElementById('apellidos').value = userMap.apellidos;
+                document.getElementById('correo').value = userMap.correo;
+
+                // Mapeo simple de Rol (ajustar IDs según tu BD)
+                // Suponiendo: 1=ADMIN, 2=CLIENTE. El map trae el NOMBRE del rol, necesitamos el ID si el select usa IDs.
+                // Si tu SP devuelve id_rol, úsalo directo:
+                document.getElementById('idRol').value = userMap.idRol || (userMap.rol === 'ADMIN' ? 1 : 2);
+
+                document.getElementById('password').required = false;
+                document.getElementById('password').placeholder = '(Sin cambios)';
+
+                // Abrir Modal
+                new bootstrap.Modal(document.getElementById('userModal')).show();
+            }
+        </script>
+
+    </th:block>
+</html>

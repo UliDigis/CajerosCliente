@@ -7,7 +7,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -19,24 +18,20 @@ public class SecurityConfig {
         this.jwtCookieAuthFilter = jwtCookieAuthFilter;
     }
 
+    /**
+     * Configuración SOLO para pruebas: - Permite cualquier request sin
+     * autenticación. - No registra el filtro JWT por cookie.
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login", "/css/**", "/error").permitAll()
-                .requestMatchers("/users/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
                 )
-                .addFilterBefore(jwtCookieAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .formLogin(AbstractHttpConfigurer::disable)
-                .httpBasic(AbstractHttpConfigurer::disable)
-                .logout(logout -> logout
-                .logoutUrl("/logout")
-                .deleteCookies("JWT")
-                .logoutSuccessUrl("/login?logout")
-                );
+                .httpBasic(AbstractHttpConfigurer::disable);
 
         return http.build();
     }

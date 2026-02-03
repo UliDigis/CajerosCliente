@@ -6,136 +6,507 @@
 
     <th:block th:fragment="content">
 
-        <div class="d-flex align-items-center justify-content-between mb-3">
+        <style>
+            .atm-card {
+                transition: transform 0.2s, box-shadow 0.2s;
+                border: none;
+                background: #fff;
+            }
+            .atm-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+            }
+            .status-dot {
+                height: 10px;
+                width: 10px;
+                border-radius: 50%;
+                display: inline-block;
+            }
+            .bg-gradient-primary {
+                background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            }
+            .receipt-paper {
+                background-color: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-bottom: 2px dashed #adb5bd; /* Efecto corte de papel */
+                position: relative;
+            }
+            .pin-input {
+                letter-spacing: 5px;
+                font-weight: bold;
+            }
+        </style>
+
+        <div class="d-flex align-items-center justify-content-between mb-4">
             <div>
-                <h1 class="h4 mb-1">Cajeros automáticos</h1>
-                <div class="text-secondary small">Selecciona un cajero para continuar</div>
+                <h1 class="h3 fw-bold text-dark"><i class="bi bi-bank me-2"></i>Red de Cajeros</h1>
+                <p class="text-muted mb-0">Gestiona y opera los cajeros automáticos disponibles.</p>
             </div>
 
-            <!-- ADMIN: recarga masiva -->
             <div sec:authorize="hasRole('ADMIN')">
                 <form id="formRecargarTodos" th:action="@{/admin/cajeros/recargar-todos}" method="post">
-                    <button class="btn btn-warning" type="button" onclick="confirmRecargarTodos()">
-                        <i class="bi bi-cash-stack me-1"></i>Recargar todos
+                    <button class="btn btn-dark shadow-sm" type="button" onclick="confirmRecargarTodos()">
+                        <i class="bi bi-arrow-repeat me-1"></i> Abastecer Toda la Red
                     </button>
                 </form>
             </div>
         </div>
 
-        <div class="row g-3">
-
+        <div class="row g-4">
             <div class="col-12 col-md-6 col-xl-4" th:each="atm : ${atms}">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex align-items-start justify-content-between">
-                            <div>
-                                <div class="fw-bold" th:text="${'Cajero ' + atm.codigoCajero}">Cajero ATM-001</div>
+                <div class="card atm-card shadow-sm h-100">
+                    <div class="card-body p-4 d-flex flex-column">
 
-                                <div class="small text-secondary">
-                                    Código: <span th:text="${atm.codigoCajero}">ATM-001</span>
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bg-light p-2 rounded-3 text-primary">
+                                    <i class="bi bi-cash-coin fs-4"></i>
                                 </div>
-
-                                <div class="small text-secondary">
-                                    Efectivo disponible:
-                                    <span th:text="${#numbers.formatDecimal(atm.saldo, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                                <div>
+                                    <h5 class="card-title mb-0 fw-bold" th:text="${atm.codigoCajero}">ATM-01</h5>
+                                    <small class="text-muted">ID Terminal</small>
                                 </div>
                             </div>
-
-                            <span class="badge text-bg-light border"
-                                  th:text="${atm.estado == 1 ? 'ACTIVO' : 'INACTIVO'}">ACTIVO</span>
+                            <div class="d-flex align-items-center gap-1 bg-light px-2 py-1 rounded-pill border">
+                                <span class="status-dot" 
+                                      th:classappend="${atm.estado == 1 ? 'bg-success' : 'bg-danger'}"></span>
+                                <span class="small fw-semibold text-secondary" 
+                                      th:text="${atm.estado == 1 ? 'En Línea' : 'Fuera de Servicio'}">ACTIVO</span>
+                            </div>
                         </div>
 
-                        <div class="mt-3 d-flex flex-wrap gap-2">
+                        <div class="mb-4">
+                            <small class="text-secondary text-uppercase fw-semibold" style="font-size: 0.75rem;">Efectivo Disponible</small>
+                            <div class="fs-3 fw-bold text-dark" 
+                                 th:text="${'$' + #numbers.formatDecimal(atm.saldo, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+                        </div>
 
-                            <!-- CLIENTE -->
-                            <a class="btn btn-primary"
-                               sec:authorize="hasRole('CLIENTE')"
-                               th:href="@{'/atm/' + ${atm.codigoCajero}}">
-                                Seleccionar
-                            </a>
+                        <div class="mt-auto pt-3 border-top d-grid gap-2">
 
-                            <!-- ADMIN: botones adicionales -->
-                            <div sec:authorize="hasRole('ADMIN')" class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-primary"
+                                    sec:authorize="hasRole('CLIENTE')"
+                                    type="button"
+                                    th:attr="data-codigo=${atm.codigoCajero},data-saldo=${atm.saldo},data-estado=${atm.estado}"
+                                    onclick="openAtmModal(this)"
+                                    th:disabled="${atm.estado != 1}">
+                                <i class="bi bi-credit-card me-2"></i>Usar Cajero
+                            </button>
 
-                                <a class="btn btn-outline-secondary"
-                                   th:href="@{'/atm/' + ${atm.codigoCajero}}">
-                                    Ver
-                                </a>
+                            <div sec:authorize="hasRole('ADMIN')" class="d-flex gap-2">
+                                <button class="btn btn-outline-primary w-50"
+                                        type="button"
+                                        th:attr="data-codigo=${atm.codigoCajero},data-saldo=${atm.saldo},data-estado=${atm.estado}"
+                                        onclick="openAtmModal(this)">
+                                    <i class="bi bi-eye"></i> Ver
+                                </button>
 
-                                <form class="m-0"
+                                <form class="w-50 m-0"
                                       th:id="${'formRecargar_' + atm.codigoCajero}"
                                       th:action="@{'/admin/cajeros/' + ${atm.codigoCajero} + '/recargar'}"
                                       method="post">
-                                    <button class="btn btn-outline-warning" type="button"
+                                    <button class="btn btn-outline-warning w-100" type="button"
                                             th:attr="data-codigo=${atm.codigoCajero},data-nombre=${'Cajero ' + atm.codigoCajero}"
                                             onclick="confirmRecargarUno(this)">
-                                        <i class="bi bi-cash-coin me-1"></i>Recargar cajero
+                                        <i class="bi bi-plus-lg"></i> Recargar
                                     </button>
                                 </form>
-
                             </div>
-
                         </div>
+
                     </div>
                 </div>
             </div>
-
         </div>
 
-        <div th:if="${param.ok}" class="d-none" id="msgOk" th:text="${param.ok}">OK</div>
-        <div th:if="${param.err}" class="d-none" id="msgErr" th:text="${param.err}">ERR</div>
+        <div class="modal fade" id="atmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg overflow-hidden">
+
+                    <div class="modal-header bg-gradient-primary text-white border-0">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-bank2 fs-4"></i>
+                            <div>
+                                <h5 class="modal-title fw-bold">Banco Forjadores</h5>
+                                <div class="small opacity-75">Terminal: <span id="atmCodigoTitle">...</span></div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="atmHardReset()"></button>
+                    </div>
+
+                    <div class="modal-body bg-light p-4">
+
+                        <div class="alert alert-danger d-none shadow-sm border-0" id="atmMsgBox">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i><span id="atmMsgText">Error</span>
+                        </div>
+
+                        <div id="atmStepLogin">
+                            <div class="text-center mb-4">
+                                <h5 class="fw-bold text-dark">Bienvenido</h5>
+                                <p class="text-muted small">Inserte sus credenciales para operar</p>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="atmTarjeta" placeholder="0000 0000 0000 0000" maxlength="16" autocomplete="off">
+                                <label for="atmTarjeta"><i class="bi bi-credit-card-2-front me-1"></i> Número de Tarjeta</label>
+                            </div>
+
+                            <div class="form-floating mb-4">
+                                <input type="password" class="form-control pin-input" id="atmNip" placeholder="****" maxlength="4" autocomplete="off">
+                                <label for="atmNip"><i class="bi bi-shield-lock me-1"></i> NIP</label>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary btn-lg" type="button" onclick="atmLogin()" id="btnLogin">
+                                    Acceder <i class="bi bi-arrow-right ms-2"></i>
+                                </button>
+                                <button class="btn btn-link text-decoration-none text-muted btn-sm" onclick="atmResetInputs()">Borrar campos</button>
+                            </div>
+                        </div>
+
+                        <div id="atmStepOperacion" class="d-none">
+
+                            <div class="card border-0 shadow-sm mb-4 bg-white">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="small text-muted text-uppercase fw-bold">Saldo Disponible</div>
+                                            <div class="fs-2 fw-bold text-success" id="atmSaldoCuenta">$0.00</div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="badge bg-light text-dark border" id="atmUsuarioId">User</div>
+                                            <div class="small text-muted mt-1" id="atmRolNombre">Rol</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <label class="form-label fw-semibold">¿Cuánto desea retirar?</label>
+                            <div class="input-group mb-4">
+                                <span class="input-group-text bg-white border-end-0">$</span>
+                                <input type="number" class="form-control border-start-0 ps-0 fs-4 fw-bold" id="atmMonto" placeholder="0.00">
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-success btn-lg" type="button" onclick="atmRetirar()" id="btnRetirar">
+                                    <i class="bi bi-cash-stack me-2"></i>Confirmar Retiro
+                                </button>
+                                <button class="btn btn-outline-secondary" type="button" onclick="atmLogout()">
+                                    Cancelar y Salir
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="atmRetiroResult" class="d-none animate__animated animate__fadeIn">
+
+                            <div class="text-center mb-3">
+                                <div class="text-success fs-1 mb-2"><i class="bi bi-check-circle-fill"></i></div>
+                                <h5 class="fw-bold">¡Retiro Exitoso!</h5>
+                                <p class="text-muted small">Por favor tome su efectivo y recibo.</p>
+                            </div>
+
+                            <div class="receipt-paper p-3 rounded-1 mb-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted small">Cajero</span>
+                                    <span class="fw-bold small" id="atmCajeroRetiro">-</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted small">Retirado</span>
+                                    <span class="fw-bold text-dark" id="atmRetiroMonto">-</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3 border-bottom pb-2">
+                                    <span class="text-muted small">Saldo Restante</span>
+                                    <span class="fw-bold text-muted" id="atmSaldoRestante">-</span>
+                                </div>
+
+                                <div class="small fw-bold mb-2">Desglose de Efectivo:</div>
+                                <table class="table table-sm table-borderless mb-0 small">
+                                    <tbody id="atmDesgloseBody"></tbody>
+                                </table>
+                            </div>
+
+                            <div class="d-grid">
+                                <button class="btn btn-primary" type="button" onclick="atmHardReset()" data-bs-dismiss="modal">
+                                    Finalizar
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer bg-white py-2 justify-content-center">
+                        <small class="text-muted" style="font-size: 0.7rem;">
+                            <i class="bi bi-lock-fill me-1"></i>Transacción Segura End-to-End
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${param.ok}" class="d-none" id="msgOk" th:text="${param.ok}"></div>
+        <div th:if="${param.err}" class="d-none" id="msgErr" th:text="${param.err}"></div>
 
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <script>
-                                                function confirmRecargarUno(btn) {
-                                                    const codigo = btn.getAttribute('data-codigo');
-                                                    const nombre = btn.getAttribute('data-nombre');
 
-                                                    Swal.fire({
-                                                        title: 'Recargar cajero',
-                                                        text: '¿Deseas recargar el cajero "' + nombre + '" (' + codigo + ')?',
-                                                        icon: 'warning',
-                                                        showCancelButton: true,
-                                                        confirmButtonText: 'Sí, recargar',
-                                                        cancelButtonText: 'Cancelar'
-                                                    }).then((r) => {
-                                                        if (!r.isConfirmed)
-                                                            return;
-                                                        const form = document.getElementById('formRecargar_' + codigo);
-                                                        if (form)
-                                                            form.submit();
-                                                    });
-                                                }
+        <script th:inline="javascript">
+                                    const ATM_API = "http://localhost:8080";
+                                    let atmModalInstance = null;
 
-                                                function confirmRecargarTodos() {
-                                                    Swal.fire({
-                                                        title: 'Recargar todos',
-                                                        text: '¿Deseas recargar todos los cajeros activos?',
-                                                        icon: 'warning',
-                                                        showCancelButton: true,
-                                                        confirmButtonText: 'Sí, recargar',
-                                                        cancelButtonText: 'Cancelar'
-                                                    }).then((r) => {
-                                                        if (!r.isConfirmed)
-                                                            return;
-                                                        const form = document.getElementById('formRecargarTodos');
-                                                        if (form)
-                                                            form.submit();
-                                                    });
-                                                }
+                                    // Estado de la sesión
+                                    const atmSession = {
+                                        codigoCajero: null,
+                                        tarjeta: null,
+                                        nip: null,
+                                        idCuenta: null
+                                    };
 
-                                                (function showToastFromParams() {
-                                                    const ok = document.getElementById('msgOk');
-                                                    const err = document.getElementById('msgErr');
+                                    // ---- UI HELPERS ----
+                                    function setLoading(btnId, isLoading) {
+                                        const btn = document.getElementById(btnId);
+                                        if (!btn)
+                                            return;
+                                        if (isLoading) {
+                                            btn.disabled = true;
+                                            btn.dataset.originalText = btn.innerHTML;
+                                            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
+                                        } else {
+                                            btn.disabled = false;
+                                            btn.innerHTML = btn.dataset.originalText || 'Continuar';
+                                        }
+                                    }
 
-                                                    if (ok && ok.textContent) {
-                                                        Swal.fire({icon: 'success', title: ok.textContent});
+                                    function formatMoney(v) {
+                                        if (v == null)
+                                            return "$0.00";
+                                        const n = Number(v);
+                                        return isNaN(n) ? v : n.toLocaleString("es-MX", {style: 'currency', currency: 'MXN'});
+                                    }
+
+                                    // ---- LÓGICA PRINCIPAL ----
+
+                                    function openAtmModal(btn) {
+                                        const codigo = btn.getAttribute("data-codigo");
+                                        const saldo = btn.getAttribute("data-saldo");
+                                        const estado = btn.getAttribute("data-estado");
+
+                                        atmSession.codigoCajero = codigo;
+
+                                        document.getElementById("atmCodigoTitle").textContent = codigo;
+                                        atmHardReset(); // Limpia todo al abrir
+
+                                        const modalEl = document.getElementById("atmModal");
+                                        atmModalInstance = new bootstrap.Modal(modalEl);
+                                        atmModalInstance.show();
+                                    }
+
+                                    function atmHardReset() {
+                                        // Reiniciar Inputs
+                                        document.getElementById("atmTarjeta").value = "";
+                                        document.getElementById("atmNip").value = "";
+                                        document.getElementById("atmMonto").value = "";
+
+                                        // Reiniciar Vistas
+                                        document.getElementById("atmStepLogin").classList.remove("d-none");
+                                        document.getElementById("atmStepOperacion").classList.add("d-none");
+                                        document.getElementById("atmRetiroResult").classList.add("d-none");
+                                        document.getElementById("atmMsgBox").classList.add("d-none");
+
+                                        // Reiniciar Datos
+                                        atmSession.tarjeta = null;
+                                        atmSession.nip = null;
+                                        atmSession.idCuenta = null;
+                                    }
+
+                                    function atmLogout() {
+                                        atmHardReset();
+                                    }
+
+                                    function atmResetInputs() {
+                                        document.getElementById("atmTarjeta").value = "";
+                                        document.getElementById("atmNip").value = "";
+                                        document.getElementById("atmMsgBox").classList.add("d-none");
+                                    }
+
+                                    async function atmLogin() {
+                                        const tarjeta = document.getElementById("atmTarjeta").value.trim();
+                                        const nip = document.getElementById("atmNip").value.trim();
+                                        const msgBox = document.getElementById("atmMsgBox");
+
+                                        msgBox.classList.add("d-none");
+
+                                        if (!tarjeta || !nip) {
+                                            showError("Ingrese tarjeta y NIP.");
+                                            return;
+                                        }
+
+                                        setLoading("btnLogin", true);
+
+                                        try {
+                                            const resp = await fetch(`${ATM_API}/atm/autenticar`, {
+                                                method: "POST",
+                                                headers: {"Content-Type": "application/json"},
+                                                body: JSON.stringify({data: {tarjeta, nip}})
+                                            });
+
+                                            const json = await resp.json();
+
+                                            if (!json.success && !json.ok) {
+                                                throw new Error(json.message || "Credenciales inválidas");
+                                            }
+
+                                            // Guardar sesión
+                                            const data = json.data || json.result;
+                                            atmSession.tarjeta = tarjeta;
+                                            atmSession.nip = nip;
+                                            atmSession.idCuenta = data.idCuenta;
+
+                                            // UI Updates
+                                            document.getElementById("atmUsuarioId").textContent = data.idUsuario || "Usuario";
+                                            document.getElementById("atmRolNombre").textContent = data.rol || "Cliente";
+
+                                            // Cargar saldo
+                                            await atmLoadSaldo();
+
+                                            // Cambiar vista
+                                            document.getElementById("atmStepLogin").classList.add("d-none");
+                                            document.getElementById("atmStepOperacion").classList.remove("d-none");
+
+                                        } catch (e) {
+                                            showError(e.message);
+                                        } finally {
+                                            setLoading("btnLogin", false);
+                                        }
+                                    }
+
+                                    async function atmLoadSaldo() {
+                                        try {
+                                            const resp = await fetch(`${ATM_API}/atm/saldo/${atmSession.idCuenta}`);
+                                            const json = await resp.json();
+                                            if (json.data) {
+                                                document.getElementById("atmSaldoCuenta").textContent = formatMoney(json.data.saldo);
+                                            }
+                                        } catch (e) {
+                                            console.error(e);
+                                        }
+                                    }
+
+                                    async function atmRetirar() {
+                                        const montoStr = document.getElementById("atmMonto").value;
+                                        const monto = Number(montoStr);
+
+                                        if (!monto || monto <= 0) {
+                                            showError("Ingrese un monto válido mayor a 0.");
+                                            return;
+                                        }
+
+                                        setLoading("btnRetirar", true);
+
+                                        // Convertir a centavos (lógica de tu backend)
+                                        const montoCentavos = Math.round(monto * 100);
+
+                                        try {
+                                            const resp = await fetch(`${ATM_API}/atm/retirar`, {
+                                                method: "POST",
+                                                headers: {"Content-Type": "application/json"},
+                                                body: JSON.stringify({
+                                                    data: {
+                                                        codigoCajero: atmSession.codigoCajero,
+                                                        tarjeta: atmSession.tarjeta,
+                                                        nip: atmSession.nip,
+                                                        montoCentavos: montoCentavos
                                                     }
-                                                    if (err && err.textContent) {
-                                                        Swal.fire({icon: 'error', title: err.textContent});
-                                                    }
-                                                })();
+                                                })
+                                            });
+
+                                            const json = await resp.json();
+
+                                            if (!json.success && !json.ok) {
+                                                throw new Error(json.message || "Saldo insuficiente o error de cajero");
+                                            }
+
+                                            const resData = json.data || json.result;
+
+                                            // Llenar recibo
+                                            document.getElementById("atmCajeroRetiro").textContent = resData.codigoCajero;
+                                            document.getElementById("atmRetiroMonto").textContent = formatMoney(resData.monto);
+                                            document.getElementById("atmSaldoRestante").textContent = formatMoney(resData.saldoRestante);
+
+                                            renderDesglose(resData.desglose);
+
+                                            // Mostrar resultado
+                                            document.getElementById("atmStepOperacion").classList.add("d-none");
+                                            document.getElementById("atmRetiroResult").classList.remove("d-none");
+
+                                        } catch (e) {
+                                            showError(e.message);
+                                        } finally {
+                                            setLoading("btnRetirar", false);
+                                        }
+                                    }
+
+                                    function renderDesglose(desglose) {
+                                        const tbody = document.getElementById("atmDesgloseBody");
+                                        tbody.innerHTML = "";
+                                        if (!desglose || desglose.length === 0)
+                                            return;
+
+                                        desglose.forEach(item => {
+                                            const val = item.valor || (item.valorCentavos / 100);
+                                            const row = `<tr>
+                        <td>${formatMoney(val)}</td>
+                        <td class="text-end">x${item.cantidad}</td>
+                    </tr>`;
+                                            tbody.insertAdjacentHTML('beforeend', row);
+                                        });
+                                    }
+
+                                    function showError(msg) {
+                                        const box = document.getElementById("atmMsgBox");
+                                        document.getElementById("atmMsgText").textContent = msg;
+                                        box.classList.remove("d-none");
+                                    }
+
+                                    // SweetAlerts globales para redirecciones
+                                    document.addEventListener("DOMContentLoaded", () => {
+                                        const ok = document.getElementById("msgOk")?.textContent;
+                                        const err = document.getElementById("msgErr")?.textContent;
+                                        if (ok)
+                                            Swal.fire({icon: 'success', title: 'Éxito', text: ok, timer: 2000, showConfirmButton: false});
+                                        if (err)
+                                            Swal.fire({icon: 'error', title: 'Error', text: err});
+                                    });
+
+                                    // SweetAlert Confirmaciones
+                                    function confirmRecargarUno(btn) {
+                                        const nombre = btn.dataset.nombre;
+                                        const formId = 'formRecargar_' + btn.dataset.codigo;
+
+                                        Swal.fire({
+                                            title: '¿Recargar Cajero?',
+                                            text: `Se repondrá el efectivo al máximo en ${nombre}`,
+                                            icon: 'question',
+                                            showCancelButton: true,
+                                            confirmButtonText: 'Sí, recargar',
+                                            confirmButtonColor: '#ffc107',
+                                            cancelButtonText: 'Cancelar'
+                                        }).then((r) => {
+                                            if (r.isConfirmed)
+                                                document.getElementById(formId).submit();
+                                        });
+                                    }
+
+                                    function confirmRecargarTodos() {
+                                        Swal.fire({
+                                            title: '¿Recarga Masiva?',
+                                            text: 'Esto afectará a TODOS los cajeros activos.',
+                                            icon: 'warning',
+                                            showCancelButton: true,
+                                            confirmButtonText: 'Ejecutar masiva',
+                                            confirmButtonColor: '#dc3545'
+                                        }).then((r) => {
+                                            if (r.isConfirmed)
+                                                document.getElementById("formRecargarTodos").submit();
+                                        });
+                                    }
         </script>
-
     </th:block>
 </html>

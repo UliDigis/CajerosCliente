@@ -1,4 +1,3 @@
-<!-- /templates/layout.html -->
 <!doctype html>
 <html lang="es"
       xmlns:th="http://www.thymeleaf.org"
@@ -8,215 +7,236 @@
     <head>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
-        <title th:text="${pageTitle} ?: 'Administración'">Administración</title>
+        <title th:text="${pageTitle} ?: 'Banco Forjadores'">Administración</title>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link rel="stylesheet"
-              href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-        <!-- Estilos globales: sidebar + topbar + look & feel -->
         <style>
             :root {
-                --sidebar-w: 260px;
+                --sidebar-w: 280px;
+                --primary-color: #0d6efd;
+                --bg-body: #f8f9fa;
             }
             body {
-                background: #f6f7fb;
+                background: var(--bg-body);
+                font-family: 'Inter', system-ui, -apple-system, sans-serif;
+                color: #1e293b;
             }
 
             .app-shell {
                 min-height: 100vh;
+                display: flex;
             }
-            .app-sidebar{
+
+            .app-sidebar {
                 width: var(--sidebar-w);
-                background: #fff;
-                border-right: 1px solid rgba(0,0,0,.08);
+                background: #ffffff;
+                border-right: 1px solid rgba(0,0,0,.06);
                 position: sticky;
                 top: 0;
                 height: 100vh;
+                display: flex;
+                flex-direction: column;
+                z-index: 1020;
+                box-shadow: 4px 0 24px rgba(0,0,0,0.02);
             }
-            .app-topbar{
-                background: #fff;
-                border-bottom: 1px solid rgba(0,0,0,.08);
+
+            .app-topbar {
+                background: #ffffff;
+                border-bottom: 1px solid rgba(0,0,0,.06);
+                padding: 0.75rem 1.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                position: sticky;
+                top: 0;
+                z-index: 1010;
             }
-            .brand-badge{
-                width: 28px;
-                height: 28px;
+
+            .brand-logo {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-weight: 700;
+                font-size: 1.1rem;
+                color: #0f172a;
+                text-decoration: none;
+            }
+            .brand-icon {
+                width: 36px;
+                height: 36px;
+                background: linear-gradient(135deg, var(--primary-color), #0a58ca);
+                color: white;
                 border-radius: 10px;
-                display:flex;
-                align-items:center;
-                justify-content:center;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.2rem;
+                box-shadow: 0 4px 12px rgba(13,110,253,0.3);
             }
 
             .nav-soft .nav-link {
-                border-radius: .75rem;
-                color: #334155;
-                display:flex;
-                align-items:center;
-                gap:.25rem;
+                border-radius: 0.5rem;
+                color: #64748b;
+                padding: 0.75rem 1rem;
+                font-weight: 500;
+                transition: all 0.2s ease;
+                margin-bottom: 4px;
             }
             .nav-soft .nav-link:hover {
-                background: rgba(2,6,23,.04);
+                background: #f1f5f9;
+                color: #334155;
             }
             .nav-soft .nav-link.active {
-                background: rgba(13,110,253,.10);
-                color: #0d6efd;
+                background: #eff6ff;
+                color: var(--primary-color);
                 font-weight: 600;
             }
-
-            .soft-muted {
-                color: #64748b;
+            .nav-soft .nav-link i {
+                font-size: 1.1rem;
+                color: #94a3b8;
+                transition: color 0.2s;
+            }
+            .nav-soft .nav-link.active i {
+                color: var(--primary-color);
             }
 
-            @media (max-width: 991.98px){
+            .badge-counter {
+                font-weight: 500;
+                font-size: 0.75rem;
+                padding: 0.35em 0.65em;
+            }
+
+            .app-main {
+                flex-grow: 1;
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+                overflow-x: hidden;
+            }
+            .content-wrapper {
+                padding: 2rem;
+                max-width: 1400px;
+                margin: 0 auto;
+                width: 100%;
+            }
+
+            @media (max-width: 991.98px) {
                 .app-sidebar {
-                    display:none;
+                    display: none;
                 }
-                .app-main {
-                    width: 100%;
+                .content-wrapper {
+                    padding: 1.5rem 1rem;
                 }
             }
         </style>
     </head>
 
     <body>
-        <a class="visually-hidden-focusable" href="#mainContent">Saltar al contenido</a>
 
-        <div class="d-flex app-shell">
+        <div class="app-shell">
 
-            <aside class="app-sidebar">
-                <div class="px-3 px-lg-4 py-3 border-bottom">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="brand-badge bg-primary text-white">
-                            <i class="bi bi-cash-coin" aria-hidden="true"></i>
-                        </span>
-                        <span class="fw-bold text-primary">Banco Forgadores</span>
-                    </div>
+            <aside class="app-sidebar d-none d-lg-flex">
+                <div class="p-4">
+                    <a href="#" class="brand-logo">
+                        <div class="brand-icon"><i class="bi bi-bank2"></i></div>
+                        <span>Banco Forjadores</span>
+                    </a>
                 </div>
 
-                <nav class="px-3 px-lg-4 py-3">
-                    <div class="small text-uppercase text-secondary mb-2">Principal</div>
+                <div class="px-3 flex-grow-1 overflow-auto">
+                    <div class="small fw-bold text-uppercase text-muted mb-3 px-3"
+                         style="font-size: 0.75rem; letter-spacing: 0.5px;">Menu Principal</div>
 
-                    <div class="nav nav-pills flex-column gap-1 nav-soft" role="navigation">
+                    <nav class="nav nav-pills flex-column nav-soft">
 
-                        <a class="nav-link"
-                           th:classappend="${activePage}=='dashboard' ? ' active' : ''"
-                           th:href="@{/dashboard}">
-                            <i class="bi bi-grid me-2"></i>Dashboard
+                        <a class="nav-link" th:href="@{/atms}"
+                           th:classappend="${activePage} == 'atms' ? 'active'">
+                            <i class="bi bi-cash-coin me-3"></i>Cajeros
+                            <span th:if="${atmCount}" th:text="${atmCount}"
+                                  class="badge bg-white text-secondary border ms-auto badge-counter">0</span>
                         </a>
 
-                        <a class="nav-link"
-                           th:classappend="${activePage}=='atms' ? ' active' : ''"
-                           th:href="@{/atms}">
-                            <i class="bi bi-bank me-2"></i>Cajeros
-                            <span class="badge ms-auto text-bg-light border"
-                                  th:if="${atmCount != null}"
-                                  th:text="${atmCount}">12</span>
-                        </a>
-
-                        <!-- Solo ADMIN -->
-                        <a class="nav-link"
+                        <a class="nav-link" th:href="@{/users}"
                            sec:authorize="hasRole('ADMIN')"
-                           th:classappend="${activePage}=='users' ? ' active' : ''"
-                           th:href="@{/users}">
-                            <i class="bi bi-people me-2"></i>Usuarios
+                           th:classappend="${activePage} == 'users' ? 'active'">
+                            <i class="bi bi-people me-3"></i>Usuarios
                         </a>
+                    </nav>
+                </div>
+
+                <div class="p-3 mt-auto border-top bg-light bg-opacity-25" sec:authorize="isAuthenticated()">
+                    <div class="d-flex align-items-center gap-3 px-2">
+                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
+                             style="width: 38px; height: 38px; font-size: 0.9rem;">
+                            <span sec:authentication="name" th:remove="tag">U</span>
+                        </div>
+                        <div class="overflow-hidden">
+                            <div class="fw-semibold text-truncate" sec:authentication="name" style="font-size: 0.9rem;">Usuario</div>
+                            <div class="small text-muted" style="font-size: 0.75rem;">Sesión activa</div>
+                        </div>
+
+                        <!-- LOGOUT (desktop) -->
+                        <form th:action="@{/login/logout}" method="post" class="ms-auto">
+                            <button class="btn btn-link text-secondary p-0" title="Cerrar Sesión" type="submit">
+                                <i class="bi bi-box-arrow-right fs-5"></i>
+                            </button>
+                        </form>
 
                     </div>
-
-                </nav>
+                </div>
             </aside>
 
-            <div class="flex-grow-1 app-main">
+            <div class="app-main">
 
-                <nav class="app-topbar navbar px-3 px-lg-4 py-2">
-                    <div class="d-flex align-items-center gap-2">
-                        <button class="btn btn-outline-secondary d-lg-none" type="button"
-                                data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas"
-                                aria-controls="sidebarOffcanvas">
-                            <i class="bi bi-list"></i><span class="visually-hidden">Abrir menú</span>
-                        </button>
-                        <span class="small text-secondary d-none d-md-inline">Administración</span>
-                    </div>
-
-                    <div class="d-flex align-items-center gap-2">
-
-                        <!-- Si NO está autenticado, mostrar botón Login -->
-                        <a class="btn btn-outline-primary"
-                           sec:authorize="!isAuthenticated()"
-                           th:href="@{/login}">
-                            <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión
-                        </a>
-
-                        <!-- Si está autenticado, mostrar dropdown -->
-                        <div class="dropdown" sec:authorize="isAuthenticated()">
-                            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-person-circle me-1"></i>
-                                <span sec:authentication="name">Usuario</span>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <a class="dropdown-item" th:href="@{/profile}">
-                                        <i class="bi bi-person me-2"></i>Perfil
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <form th:action="@{/logout}" method="post" class="px-3 py-1">
-                                        <button class="btn btn-sm btn-danger w-100" type="submit">
-                                            <i class="bi bi-box-arrow-right me-2"></i>Salir
-                                        </button>
-                                    </form>
-                                </li>
-                            </ul>
-                        </div>
-
-                    </div>
+                <nav class="app-topbar d-lg-none">
+                    <a href="#" class="brand-logo fs-6">
+                        <div class="brand-icon" style="width: 30px; height: 30px; font-size: 1rem;"><i class="bi bi-bank2"></i></div>
+                        <span>Forjadores</span>
+                    </a>
+                    <button class="btn btn-light border" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">
+                        <i class="bi bi-list fs-5"></i>
+                    </button>
                 </nav>
 
-                <div class="offcanvas offcanvas-start d-lg-none" tabindex="-1" id="sidebarOffcanvas"
-                     aria-labelledby="sidebarOffcanvasLabel">
-                    <div class="offcanvas-header">
-                        <h5 class="offcanvas-title" id="sidebarOffcanvasLabel">Menú</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
-                    </div>
-                    <div class="offcanvas-body">
-                        <div class="nav nav-pills flex-column gap-1 nav-soft" role="navigation">
-
-                            <a class="nav-link"
-                               th:classappend="${activePage}=='dashboard' ? ' active' : ''"
-                               th:href="@{/dashboard}">
-                                <i class="bi bi-grid me-2"></i>Dashboard
-                            </a>
-
-                            <a class="nav-link"
-                               th:classappend="${activePage}=='atms' ? ' active' : ''"
-                               th:href="@{/atms}">
-                                <i class="bi bi-bank me-2"></i>Cajeros
-                            </a>
-
-                            <!-- Solo ADMIN -->
-                            <a class="nav-link"
-                               sec:authorize="hasRole('ADMIN')"
-                               th:classappend="${activePage}=='users' ? ' active' : ''"
-                               th:href="@{/users}">
-                                <i class="bi bi-people me-2"></i>Usuarios
-                            </a>
-
-                        </div>
-
-                        <hr>
-
-                        <a class="nav-link d-block" th:href="@{/settings}">
-                            <i class="bi bi-gear me-2"></i>Settings
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Aquí se inyecta el contenido -->
-                <main id="mainContent" class="container-fluid px-3 px-lg-4 py-4">
+                <main class="content-wrapper">
                     <div th:replace="${content}"></div>
                 </main>
 
+            </div>
+        </div>
+
+        <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileMenu">
+            <div class="offcanvas-header border-bottom">
+                <h5 class="offcanvas-title fw-bold text-primary">Menú</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+            </div>
+            <div class="offcanvas-body">
+                <nav class="nav nav-pills flex-column nav-soft gap-1">
+                    <a class="nav-link" th:href="@{/dashboard}" th:classappend="${activePage} == 'dashboard' ? 'active'">
+                        <i class="bi bi-grid-1x2 me-3"></i>Dashboard
+                    </a>
+                    <a class="nav-link" th:href="@{/atms}" th:classappend="${activePage} == 'atms' ? 'active'">
+                        <i class="bi bi-cash-coin me-3"></i>Cajeros
+                    </a>
+                    <a class="nav-link" th:href="@{/users}" sec:authorize="hasRole('ADMIN')" th:classappend="${activePage} == 'users' ? 'active'">
+                        <i class="bi bi-people me-3"></i>Usuarios
+                    </a>
+
+                    <hr class="my-3">
+
+                    <!-- LOGOUT (mobile) -->
+                    <form th:action="@{/login/logout}" method="post" sec:authorize="isAuthenticated()">
+                        <button class="btn btn-outline-danger w-100" type="submit">
+                            <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
+                        </button>
+                    </form>
+                </nav>
             </div>
         </div>
 

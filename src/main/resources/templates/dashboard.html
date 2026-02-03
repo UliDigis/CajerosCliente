@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security"
       th:replace="~{layout :: layout('Administración | Cajeros & Usuarios', 'dashboard', ~{::content})}">
 
     <th:block th:fragment="content">
@@ -19,7 +20,6 @@
                 color: #0d6efd;
                 flex: 0 0 auto;
             }
-
             .chart-placeholder{
                 height: 260px;
                 border-radius: 14px;
@@ -32,221 +32,67 @@
             }
         </style>
 
-        Alerts 
-        <div class="alert alert-danger d-flex align-items-center" role="alert" th:if="${errorMessage}">
-            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
-            <div th:text="${errorMessage}">Ha ocurrido un error.</div>
+        <div class="alert alert-danger d-flex align-items-center shadow-sm" role="alert" th:if="${errorMessage}">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div th:text="${errorMessage}">Error</div>
         </div>
 
-        <div class="alert alert-success d-flex align-items-center" role="alert" th:if="${successMessage}">
-            <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>
-            <div th:text="${successMessage}">Operación exitosa.</div>
+        <div class="alert alert-success d-flex align-items-center shadow-sm" role="alert" th:if="${successMessage}">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <div th:text="${successMessage}">Éxito</div>
         </div>
 
-        Header 
-        <div class="d-flex flex-wrap align-items-start justify-content-between gap-2">
+        <div th:if="${param.ok}" class="alert alert-success d-flex align-items-center shadow-sm">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <div th:text="${param.ok}">Operación exitosa</div>
+        </div>
+        <div th:if="${param.err}" class="alert alert-danger d-flex align-items-center shadow-sm">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div th:text="${param.err}">Error</div>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-4">
             <div>
                 <h1 class="h4 mb-1">Dashboard</h1>
-                <p class="soft-muted mb-0 small">Resumen de cajeros y usuarios (admin).</p>
+                <p class="soft-muted mb-0 small">Gestión de red de cajeros y usuarios.</p>
             </div>
 
-            <div class="d-flex gap-2">
-                <a class="btn btn-primary" href="#tabsArea">
-                    <i class="bi bi-lightning-charge me-2"></i>Ir a gestión
-                </a>
-                <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#rechargeModal">
-                    <i class="bi bi-plus-circle me-2"></i>Recarga rápida
-                </button>
-            </div>
-        </div>
-
-        <div class="row g-3 mt-2" th:if="${loading}">
-            <div class="col-12 col-md-6 col-xl-3" th:each="i : ${#numbers.sequence(1,4)}">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <div class="placeholder-glow">
-                            <span class="placeholder col-5"></span>
-                            <span class="placeholder col-8"></span>
-                            <span class="placeholder col-6"></span>
-                        </div>
-                    </div>
-                </div>
+            <div sec:authorize="hasRole('ADMIN')">
+                <form th:action="@{/admin/cajeros/recargar-todos}" method="post" onsubmit="return confirm('¿Recargar TODOS los cajeros?');">
+                    <button class="btn btn-warning text-dark" type="submit">
+                        <i class="bi bi-lightning-charge-fill me-2"></i>Recarga Masiva
+                    </button>
+                </form>
             </div>
         </div>
 
-        KPI row (data) 
-        <div class="row g-3 mt-2" th:if="${!loading}">
-            <div class="col-12 col-md-6 col-xl-3">
-                <div class="card shadow-sm card-kpi">
-                    <div class="card-body d-flex gap-3 align-items-center">
-                        <div class="kpi-ico"><i class="bi bi-bank"></i></div>
-                        <div>
-                            <div class="small soft-muted">Cajeros activos</div>
-                            <div class="fs-5 fw-bold" th:text="${kpis.activeAtms} ?: 0">23</div>
-                            <div class="small text-success" th:if="${kpis.activeAtmsDelta != null}">
-                                <i class="bi bi-arrow-up-right"></i> <span th:text="${kpis.activeAtmsDelta}">+1.2%</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-6 col-xl-3">
-                <div class="card shadow-sm card-kpi">
-                    <div class="card-body d-flex gap-3 align-items-center">
-                        <div class="kpi-ico"><i class="bi bi-cash-stack"></i></div>
-                        <div>
-                            <div class="small soft-muted">Saldo total en cajeros</div>
-                            <div class="fs-5 fw-bold" th:text="${kpis.totalAtmBalanceFormatted} ?: '$0.00'">$54,320</div>
-                            <div class="small text-success" th:if="${kpis.totalAtmBalanceDelta != null}">
-                                <i class="bi bi-arrow-up-right"></i> <span th:text="${kpis.totalAtmBalanceDelta}">+8.2%</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-6 col-xl-3">
-                <div class="card shadow-sm card-kpi">
-                    <div class="card-body d-flex gap-3 align-items-center">
-                        <div class="kpi-ico"><i class="bi bi-arrow-repeat"></i></div>
-                        <div>
-                            <div class="small soft-muted">Recargas hoy</div>
-                            <div class="fs-5 fw-bold" th:text="${kpis.rechargesToday} ?: 0">1852</div>
-                            <div class="small text-danger" th:if="${kpis.rechargesDelta != null}">
-                                <i class="bi bi-arrow-down-right"></i> <span th:text="${kpis.rechargesDelta}">-2.1%</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-6 col-xl-3">
-                <div class="card shadow-sm card-kpi">
-                    <div class="card-body d-flex gap-3 align-items-center">
-                        <div class="kpi-ico"><i class="bi bi-people"></i></div>
-                        <div>
-                            <div class="small soft-muted">Usuarios activos</div>
-                            <div class="fs-5 fw-bold" th:text="${kpis.activeUsers} ?: 0">12,426</div>
-                            <div class="small text-success" th:if="${kpis.activeUsersDelta != null}">
-                                <i class="bi bi-arrow-up-right"></i> <span th:text="${kpis.activeUsersDelta}">+2.5%</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
- 
-        <div class="row g-3 mt-1">
-            <div class="col-12 col-lg-8">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                        <div class="fw-semibold">Visión general</div>
-                        <div class="btn-group btn-group-sm" role="group" aria-label="Rango">
-                            <button type="button" class="btn btn-outline-secondary">7D</button>
-                            <button type="button" class="btn btn-outline-secondary">30D</button>
-                            <button type="button" class="btn btn-outline-secondary active">90D</button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-placeholder">
-                            <div class="text-center">
-                                <i class="bi bi-graph-up fs-2" aria-hidden="true"></i>
-                                <div class="mt-2"></div>
-                                <div class="small"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-lg-4">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white fw-semibold">Actividad reciente</div>
-                    <div class="card-body">
-                        <div th:if="${activities == null || #lists.isEmpty(activities)}" class="text-center py-3">
-                            <i class="bi bi-inbox text-secondary fs-2" aria-hidden="true"></i>
-                            <div class="mt-2 fw-semibold"></div>
-                            <div class="small soft-muted"></div>
-                        </div>
-
-                        <ul class="list-group list-group-flush" th:if="${activities != null && !#lists.isEmpty(activities)}">
-                            <li class="list-group-item d-flex gap-3 align-items-start" th:each="a : ${activities}">
-                                <span class="rounded-circle bg-light border d-inline-flex align-items-center justify-content-center"
-                                      style="width:34px;height:34px;">
-                                    <i class="bi bi-activity"></i>
-                                </span>
-                                <div class="flex-grow-1">
-                                    <div class="fw-semibold" th:text="${a.title}"></div>
-                                    <div class="small soft-muted" th:text="${a.description}"></div>
-                                </div>
-                                <div class="small text-nowrap soft-muted" th:text="${a.relativeTime}"></div>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="card shadow-sm mt-3">
-                    <div class="card-header bg-white fw-semibold">Acciones rápidas</div>
-                    <div class="card-body d-grid gap-2">
-                        <a class="btn btn-outline-primary" th:href="@{/atms}">
-                            <i class="bi bi-bank me-2"></i>Administrar cajeros
-                        </a>
-                        <a class="btn btn-outline-primary" th:href="@{/users}">
-                            <i class="bi bi-people me-2"></i>Administrar usuarios
-                        </a>
-                        <a class="btn btn-outline-secondary" th:href="@{/reports}">
-                            <i class="bi bi-file-earmark-text me-2"></i>Reportes
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        
-        <div id="tabsArea" class="card shadow-sm mt-3">
-            <div class="card-header bg-white d-flex flex-wrap gap-2 align-items-center justify-content-between">
-                <div class="fw-semibold">Gestión</div>
+        <div id="tabsArea" class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom-0 pt-3 px-3 d-flex flex-wrap gap-2 align-items-center justify-content-between">
+                <div class="fw-bold text-primary">Panel de Control</div>
 
                 <ul class="nav nav-pills nav-soft gap-1" id="adminTabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="tab-atms" data-bs-toggle="pill" data-bs-target="#pane-atms"
-                                type="button" role="tab" aria-controls="pane-atms" aria-selected="true">
+                        <button class="nav-link active" id="tab-atms" data-bs-toggle="pill" data-bs-target="#pane-atms" type="button" role="tab">
                             <i class="bi bi-bank me-1"></i> Cajeros
                         </button>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="tab-users" data-bs-toggle="pill" data-bs-target="#pane-users"
-                                type="button" role="tab" aria-controls="pane-users" aria-selected="false">
+                    <li class="nav-item" role="presentation" sec:authorize="hasRole('ADMIN')">
+                        <button class="nav-link" id="tab-users" data-bs-toggle="pill" data-bs-target="#pane-users" type="button" role="tab">
                             <i class="bi bi-people me-1"></i> Usuarios
                         </button>
                     </li>
                 </ul>
             </div>
 
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="tab-content" id="adminTabsContent">
 
-                    
-                    <div class="tab-pane fade show active" id="pane-atms" role="tabpanel" aria-labelledby="tab-atms" tabindex="0">
+                    <div class="tab-pane fade show active" id="pane-atms" role="tabpanel" tabindex="0">
 
-                        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3">
-                            <form class="d-flex gap-2" th:action="@{/atms}" method="get">
-                                <input class="form-control" type="search" name="q" placeholder="Buscar cajero (ID/ubicación)"
-                                       th:value="${param.q}" aria-label="Buscar cajeros">
-                                <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
-                            </form>
-
-                            <div class="d-flex gap-2">
-                                <select class="form-select" aria-label="Filtrar por estado">
-                                    <option value="">Todos</option>
-                                    <option value="ACTIVE">Activos</option>
-                                    <option value="INACTIVE">Inactivos</option>
-                                </select>
-
-                                <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#rechargeModal">
-                                    <i class="bi bi-plus-circle me-1"></i>Recargar
-                                </button>
+                        <div class="p-3 border-bottom bg-light bg-opacity-10 d-flex gap-2 justify-content-end">
+                            <div class="input-group input-group-sm w-auto">
+                                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control border-start-0" placeholder="Buscar cajero...">
                             </div>
                         </div>
 
@@ -254,61 +100,75 @@
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>ID</th>
-                                        <th>Ubicación</th>
-                                        <th class="text-end">Saldo</th>
-                                        <th>Estado</th>
-                                        <th>Última recarga</th>
-                                        <th class="text-end">Acciones</th>
+                                        <th class="ps-4">Código</th>
+                                        <th class="text-end">Saldo Actual</th>
+                                        <th class="text-center">Estado</th>
+                                        <th class="text-end pe-4">Acciones</th>
                                     </tr>
                                 </thead>
-
-                                <tbody th:if="${atms == null || #lists.isEmpty(atms)}">
-                                    <tr>
-                                        <td colspan="6" class="text-center py-5">
-                                            <i class="bi bi-inbox text-secondary fs-2" aria-hidden="true"></i>
-                                            <div class="mt-2 fw-semibold">No hay cajeros</div>
-                                            <div class="small soft-muted">Ajusta filtros o crea tu primer registro.</div>
+                                <tbody>
+                                    <tr th:if="${atms == null || #lists.isEmpty(atms)}">
+                                        <td colspan="4" class="text-center py-5 text-muted">
+                                            <i class="bi bi-hdd-stack fs-1 d-block mb-2"></i>
+                                            No hay cajeros registrados
                                         </td>
                                     </tr>
-                                </tbody>
 
-                                <tbody th:if="${atms != null && !#lists.isEmpty(atms)}">
                                     <tr th:each="atm : ${atms}">
-                                        <td class="fw-semibold" th:text="${atm.code}">ATM-001</td>
-                                        <td th:text="${atm.location}">Sucursal Centro</td>
-                                        <td class="text-end fw-semibold" th:text="${atm.balanceFormatted}">$12,450.00</td>
-                                        <td>
-                                            <span class="badge"
-                                                  th:classappend="${atm.active} ? ' bg-success' : ' bg-secondary'"
-                                                  th:text="${atm.active} ? 'Activo' : 'Inactivo'">Activo</span>
+                                        <td class="ps-4">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center" style="width:32px;height:32px">
+                                                    <i class="bi bi-bank2 small"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-semibold text-dark" th:text="${atm.codigoCajero}">ATM-001</div>
+                                                    <div class="small text-muted" th:text="'ID: ' + ${atm.idCajero}">ID: 1</div>
+                                                </div>
+                                            </div>
                                         </td>
-                                        <td class="small soft-muted" th:text="${atm.lastRechargeAtFormatted} ?: '—'">—</td>
-                                        <td class="text-end">
-                                            <div class="btn-group">
-                                                <a class="btn btn-sm btn-outline-primary"
-                                                   th:href="@{/atms/{id}(id=${atm.id})}">
-                                                    <i class="bi bi-eye me-1"></i>Ver
-                                                </a>
 
-                                                <button class="btn btn-sm btn-primary"
+                                        <td class="text-end font-monospace fw-bold text-dark" 
+                                            th:text="${'$' + #numbers.formatDecimal(atm.saldo, 1, 'COMMA', 2, 'POINT')}">
+                                            $0.00
+                                        </td>
+
+                                        <td class="text-center">
+                                            <span class="badge rounded-pill border"
+                                                  th:classappend="${atm.estado == 1} ? 'text-bg-success border-success-subtle' : 'text-bg-secondary border-secondary-subtle'">
+                                                <i class="bi me-1" th:classappend="${atm.estado == 1} ? 'bi-wifi' : 'bi-wifi-off'"></i>
+                                                <span th:text="${atm.estado == 1 ? 'En Línea' : 'Fuera de Servicio'}">ACTIVO</span>
+                                            </span>
+                                        </td>
+
+                                        <td class="text-end pe-4">
+                                            <div class="d-flex justify-content-end gap-2">
+
+                                                <button class="btn btn-sm btn-outline-primary d-flex align-items-center"
                                                         type="button"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#rechargeModal"
-                                                        th:attr="data-atm-id=${atm.id},data-atm-code=${atm.code},data-atm-balance=${atm.balanceFormatted}">
-                                                    <i class="bi bi-plus-circle me-1"></i>Recargar
+                                                        th:disabled="${atm.estado == 0 && !#authorization.expression('hasRole(''ADMIN'')')}"
+                                                        onclick="alert('Aquí iría la lógica para abrir el modal del cajero (ver código anterior)')">
+                                                    <i class="bi bi-credit-card me-1"></i> Acceder
                                                 </button>
 
-                                                <form th:action="@{/atms/{id}/toggle(id=${atm.id})}" method="post" class="d-inline">
-                                                    <input type="hidden"
-                                                           th:if="${_csrf != null}"
-                                                           th:name="${_csrf.parameterName}"
-                                                           th:value="${_csrf.token}">
-                                                    <button class="btn btn-sm btn-outline-secondary" type="submit"
-                                                            th:title="${atm.active} ? 'Desactivar' : 'Activar'">
-                                                        <i class="bi" th:classappend="${atm.active} ? ' bi-pause-circle' : ' bi-play-circle'"></i>
+                                                <div sec:authorize="hasRole('ADMIN')" class="d-flex gap-2">
+                                                    <button class="btn btn-sm btn-success d-flex align-items-center"
+                                                            type="button"
+                                                            data-bs-toggle="modal" 
+                                                            data-bs-target="#rechargeModal"
+                                                            th:attr="data-atm-id=${atm.idCajero},data-atm-code=${atm.codigoCajero},data-atm-balance=${atm.saldo}">
+                                                        <i class="bi bi-cash-coin me-1"></i> Recargar
                                                     </button>
-                                                </form>
+
+                                                    <form th:action="@{'/atms/' + ${atm.codigoCajero} + '/toggle'}" method="post" class="m-0">
+                                                        <button class="btn btn-sm border" 
+                                                                th:classappend="${atm.estado == 1} ? 'btn-light text-danger' : 'btn-light text-success'"
+                                                                type="submit"
+                                                                th:title="${atm.estado == 1} ? 'Apagar' : 'Encender'">
+                                                            <i class="bi" th:classappend="${atm.estado == 1} ? 'bi-power' : 'bi-play-fill'"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+
                                             </div>
                                         </td>
                                     </tr>
@@ -317,183 +177,48 @@
                         </div>
                     </div>
 
-                    
-                    <div class="tab-pane fade" id="pane-users" role="tabpanel" aria-labelledby="tab-users" tabindex="0">
-
-                        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3">
-                            <form class="d-flex gap-2" th:action="@{/users}" method="get">
-                                <input class="form-control" type="search" name="q" placeholder="Buscar usuario (nombre/email)"
-                                       th:value="${param.q}" aria-label="Buscar usuarios">
-                                <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
-                            </form>
-
-                            <div class="d-flex gap-2">
-                                <select class="form-select" aria-label="Filtrar por estado">
-                                    <option value="">Todos</option>
-                                    <option value="ACTIVE">Activos</option>
-                                    <option value="INACTIVE">Inactivos</option>
-                                </select>
-                            </div>
+                    <div class="tab-pane fade" id="pane-users" role="tabpanel" tabindex="0">
+                        <div class="p-5 text-center text-muted">
+                            <i class="bi bi-people fs-1"></i>
+                            <p class="mt-2">Gestión de usuarios disponible próximamente.</p>
                         </div>
-
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Usuario</th>
-                                        <th>Email</th>
-                                        <th>Rol</th>
-                                        <th>Estado</th>
-                                        <th>Alta</th>
-                                        <th class="text-end">Acciones</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody th:if="${users == null || #lists.isEmpty(users)}">
-                                    <tr>
-                                        <td colspan="6" class="text-center py-5">
-                                            <i class="bi bi-inbox text-secondary fs-2" aria-hidden="true"></i>
-                                            <div class="mt-2 fw-semibold">No hay usuarios</div>
-                                            <div class="small soft-muted">No se encontraron registros.</div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-
-                                <tbody th:if="${users != null && !#lists.isEmpty(users)}">
-                                    <tr th:each="u : ${users}">
-                                        <td>
-                                            <div class="d-flex gap-2 align-items-center">
-                                                <span class="rounded-circle bg-light border d-inline-flex align-items-center justify-content-center"
-                                                      style="width:34px;height:34px;">
-                                                    <i class="bi bi-person"></i>
-                                                </span>
-                                                <div>
-                                                    <div class="fw-semibold" th:text="${u.fullName}">John Doe</div>
-                                                    <div class="small soft-muted" th:text="'ID: ' + ${u.id}">ID: 12</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td th:text="${u.email}">john@demo.com</td>
-                                        <td><span class="badge text-bg-light border" th:text="${u.role}">ADMIN</span></td>
-                                        <td>
-                                            <span class="badge"
-                                                  th:classappend="${u.active} ? ' bg-success' : ' bg-secondary'"
-                                                  th:text="${u.active} ? 'Activo' : 'Inactivo'">Activo</span>
-                                        </td>
-                                        <td class="small soft-muted" th:text="${u.createdAtFormatted} ?: '—'">—</td>
-                                        <td class="text-end">
-                                            <div class="btn-group">
-                                                <a class="btn btn-sm btn-outline-primary" th:href="@{/users/{id}(id=${u.id})}">
-                                                    <i class="bi bi-eye me-1"></i>Detalle
-                                                </a>
-
-                                                <form th:action="@{/users/{id}/toggle(id=${u.id})}" method="post" class="d-inline">
-                                                    <input type="hidden"
-                                                           th:if="${_csrf != null}"
-                                                           th:name="${_csrf.parameterName}"
-                                                           th:value="${_csrf.token}">
-                                                    <button class="btn btn-sm btn-outline-secondary" type="submit"
-                                                            th:title="${u.active} ? 'Desactivar' : 'Activar'">
-                                                        <i class="bi" th:classappend="${u.active} ? ' bi-person-x' : ' bi-person-check'"></i>
-                                                    </button>
-                                                </form>
-
-                                                <button class="btn btn-sm btn-outline-danger" type="button"
-                                                        data-bs-toggle="modal" data-bs-target="#deleteUserModal"
-                                                        th:attr="data-user-id=${u.id},data-user-name=${u.fullName}">
-                                                    <i class="bi bi-trash"></i>
-                                                    <span class="visually-hidden">Eliminar</span>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
                     </div>
 
                 </div>
             </div>
         </div>
 
-        
         <div class="text-center small soft-muted mt-4">
-            © <span th:text="${#dates.format(#dates.createNow(),'yyyy')}">2026</span> Metis — Administración de cajeros y usuarios
+            &copy; <span th:text="${#dates.format(#dates.createNow(),'yyyy')}">2026</span> Banco Forjadores — Panel Administrativo
         </div>
 
-        
-        <div class="modal fade" id="rechargeModal" tabindex="-1" aria-labelledby="rechargeModalLabel" aria-hidden="true">
+        <div class="modal fade" id="rechargeModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="rechargeModalLabel">Recargar cajero</h5>
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title"><i class="bi bi-cash-stack me-2"></i>Recargar Cajero</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                     </div>
 
-                    <form th:action="@{/atms/__id__/recharge}" method="post" id="rechargeForm">
+                    <form th:action="@{/atms/__codigo__/recargar}" method="post" id="rechargeForm">
                         <div class="modal-body">
-                            <input type="hidden"
-                                   th:if="${_csrf != null}"
-                                   th:name="${_csrf.parameterName}"
-                                   th:value="${_csrf.token}">
-
-                            <div class="mb-2">
-                                <div class="small soft-muted">Cajero</div>
-                                <div class="fw-semibold" id="atmCodeLabel">—</div>
+                            <div class="alert alert-info d-flex align-items-center p-2 mb-3">
+                                <i class="bi bi-info-circle me-2 fs-4"></i>
+                                <div class="small">
+                                    Esta acción reestablecerá los billetes según la <strong>Plantilla Estándar</strong> definida en BD.
+                                </div>
                             </div>
 
-                            <div class="mb-3">
-                                <div class="small soft-muted">Saldo actual</div>
-                                <div class="fw-semibold" id="atmBalanceLabel">—</div>
-                            </div>
-
-                            <label for="amount" class="form-label">Monto a recargar</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input id="amount" name="amount" type="number" class="form-control" min="1" step="1"
-                                       placeholder="Ej: 500" required>
-                            </div>
-                            <div class="form-text">La recarga suma al saldo del cajero.</div>
-                        </div>
-
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check2-circle me-1"></i>Confirmar
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div> quiero que me hagas un SP para optener todos los cajeros, su saldo, para hacer la interfaz donde salen todos los cajeros, donde para cliente saldra para acceder y para administrador le saltra tambien le acceder pero igual el boton de recargar con el servicio de recargar un cajero, entendiste lo que busco
-        </div>
-
-        
-        <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="deleteUserModalLabel">Eliminar usuario</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-
-                    <form th:action="@{/users/__id__/delete}" method="post" id="deleteUserForm">
-                        <div class="modal-body">
-                            <input type="hidden"
-                                   th:if="${_csrf != null}"
-                                   th:name="${_csrf.parameterName}"
-                                   th:value="${_csrf.token}">
-
-                            <p class="mb-2">¿Seguro que deseas eliminar a <span class="fw-semibold" id="userNameLabel">—</span>?</p>
-                            <div class="alert alert-warning mb-0" role="alert">
-                                <i class="bi bi-exclamation-triangle me-2"></i> Esta acción es permanente.
+                            <div class="mb-3 text-center">
+                                <div class="small text-muted text-uppercase fw-bold">Cajero Seleccionado</div>
+                                <div class="fs-4 fw-bold text-primary" id="atmCodeLabel">---</div>
+                                <div class="small text-muted">Saldo actual: $<span id="atmBalanceLabel">0.00</span></div>
                             </div>
                         </div>
-
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash me-1"></i>Eliminar
+                        <div class="modal-footer border-top-0">
+                            <button type="button" class="btn btn-link text-secondary text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary px-4">
+                                Confirmar Recarga
                             </button>
                         </div>
                     </form>
@@ -502,31 +227,26 @@
         </div>
 
         <script>
-            const rechargeBase = '/atms/__id__/recharge';
-            const deleteBase = '/users/__id__/delete';
+            document.addEventListener('DOMContentLoaded', () => {
+                const rechargeModal = document.getElementById('rechargeModal');
+                if (rechargeModal) {
+                    rechargeModal.addEventListener('show.bs.modal', event => {
+                        const button = event.relatedTarget;
+                        const code = button.getAttribute('data-atm-code');
+                        const balance = button.getAttribute('data-atm-balance');
 
-            document.addEventListener('show.bs.modal', function (event) {
-                const modal = event.target;
-                const trigger = event.relatedTarget;
-                if (!modal)
-                    return;
+                        // Actualizar textos
+                        document.getElementById('atmCodeLabel').textContent = code;
+                        document.getElementById('atmBalanceLabel').textContent = balance;
 
-                if (modal.id === 'rechargeModal') {
-                    const id = trigger?.getAttribute('data-atm-id') || '1';
-                    const code = trigger?.getAttribute('data-atm-code') || 'ATM-—';
-                    const balance = trigger?.getAttribute('data-atm-balance') || '—';
-
-                    document.getElementById('atmCodeLabel').textContent = code;
-                    document.getElementById('atmBalanceLabel').textContent = balance;
-                    document.getElementById('rechargeForm').action = rechargeBase.replace('__id__', id);
-                }
-
-                if (modal.id === 'deleteUserModal') {
-                    const id = trigger?.getAttribute('data-user-id') || '1';
-                    const name = trigger?.getAttribute('data-user-name') || '—';
-
-                    document.getElementById('userNameLabel').textContent = name;
-                    document.getElementById('deleteUserForm').action = deleteBase.replace('__id__', id);
+                        // Actualizar Action del Formulario reemplazando __codigo__
+                        // Nota: Tu Controller debe esperar /atms/{codigo}/recargar
+                        const form = document.getElementById('rechargeForm');
+                        const originalAction = form.getAttribute('th:action') || '/atms/__codigo__/recargar';
+                        // Truco para JS: usaremos una base fija si el th:action ya fue procesado por Thymeleaf 
+                        // pero necesitamos reemplazar dinámicamente.
+                        form.action = '/atms/' + code + '/recargar';
+                    });
                 }
             });
         </script>

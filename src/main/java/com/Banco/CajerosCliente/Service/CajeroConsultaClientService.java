@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -14,21 +15,27 @@ public class CajeroConsultaClientService {
 
     private final RestClient restClient;
 
-    public CajeroConsultaClientService(RestClient restClient) {
-        this.restClient = restClient;
+    public CajeroConsultaClientService(@Value("${service.base-url}") String baseUrl) {
+        this.restClient = RestClient.builder()
+                .baseUrl(baseUrl)
+                .build();
     }
 
     /**
-     * Llama al backend (CajerosService) para obtener el listado de cajeros con saldo.
-     * Se retorna una lista de mapas porque la respuesta del service usa DTO genérico.
+     * Consulta el endpoint GET /cajeros del backend. Si token viene null/blank,
+     * no se envía header Authorization.
      */
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> obtenerCajeros(String token) {
-        ApiResponse resp = restClient.get()
-                .uri("/cajeros")
-                .header("Authorization", "Bearer " + token)
-                .retrieve()
-                .body(ApiResponse.class);
+
+        RestClient.RequestHeadersSpec<?> req = restClient.get()
+                .uri("/cajeros");
+
+        if (token != null && !token.isBlank()) {
+            req = req.header("Authorization", "Bearer " + token);
+        }
+
+        ApiResponse resp = req.retrieve().body(ApiResponse.class);
 
         if (resp == null || !resp.isSuccess() || resp.getData() == null) {
             return Collections.emptyList();
@@ -36,4 +43,5 @@ public class CajeroConsultaClientService {
 
         return (List<Map<String, Object>>) resp.getData();
     }
+
 }
