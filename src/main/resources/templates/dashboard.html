@@ -152,8 +152,8 @@
                         <div class="chart-placeholder">
                             <div class="text-center">
                                 <i class="bi bi-graph-up fs-2" aria-hidden="true"></i>
-                                <div class="mt-2">Placeholder de gráfico (Chart.js opcional)</div>
-                                <div class="small">Recargas / saldo / actividad</div>
+                                <div class="mt-2"></div>
+                                <div class="small"></div>
                             </div>
                         </div>
                     </div>
@@ -166,8 +166,8 @@
                     <div class="card-body">
                         <div th:if="${activities == null || #lists.isEmpty(activities)}" class="text-center py-3">
                             <i class="bi bi-inbox text-secondary fs-2" aria-hidden="true"></i>
-                            <div class="mt-2 fw-semibold">No hay registros</div>
-                            <div class="small soft-muted">Cuando haya acciones, aparecerán aquí.</div>
+                            <div class="mt-2 fw-semibold"></div>
+                            <div class="small soft-muted"></div>
                         </div>
 
                         <ul class="list-group list-group-flush" th:if="${activities != null && !#lists.isEmpty(activities)}">
@@ -177,10 +177,10 @@
                                     <i class="bi bi-activity"></i>
                                 </span>
                                 <div class="flex-grow-1">
-                                    <div class="fw-semibold" th:text="${a.title}">Recarga aplicada</div>
-                                    <div class="small soft-muted" th:text="${a.description}">ATM-002 recargado con $300</div>
+                                    <div class="fw-semibold" th:text="${a.title}"></div>
+                                    <div class="small soft-muted" th:text="${a.description}"></div>
                                 </div>
-                                <div class="small text-nowrap soft-muted" th:text="${a.relativeTime}">hace 2m</div>
+                                <div class="small text-nowrap soft-muted" th:text="${a.relativeTime}"></div>
                             </li>
                         </ul>
                     </div>
@@ -465,7 +465,7 @@
                         </div>
                     </form>
                 </div>
-            </div>
+            </div> quiero que me hagas un SP para optener todos los cajeros, su saldo, para hacer la interfaz donde salen todos los cajeros, donde para cliente saldra para acceder y para administrador le saltra tambien le acceder pero igual el boton de recargar con el servicio de recargar un cajero, entendiste lo que busco
         </div>
 
         
