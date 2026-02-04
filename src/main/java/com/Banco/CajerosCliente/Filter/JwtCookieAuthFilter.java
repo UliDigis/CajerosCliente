@@ -25,7 +25,8 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Lee el JWT desde cookie HttpOnly y llena el SecurityContext.
+     * Lee el JWT desde cookie HttpOnly o desde header Authorization.
+     * Soporta: Authorization: Bearer <token>
      */
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -33,12 +34,23 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
             FilterChain filterChain) throws ServletException, IOException {
 
         String path = request.getServletPath();
-        if (path != null && (path.startsWith("/login") || path.startsWith("/css/") || path.startsWith("/error"))) {
+        if (path != null && (path.startsWith("/login") || path.startsWith("/css/") || path.startsWith("/js/") 
+                || path.startsWith("/images/") || path.startsWith("/error"))) {
             filterChain.doFilter(request, response);
             return;
         }
 
+        // Intentar obtener token de cookie primero
         String token = readCookie(request, "JWT");
+        
+        // Si no hay cookie, intentar obtener desde Authorization header
+        if (token == null || token.isBlank()) {
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                token = authHeader.substring(7); // Remover "Bearer " prefix
+            }
+        }
+        
         if (token == null || token.isBlank()) {
             filterChain.doFilter(request, response);
             return;

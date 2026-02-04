@@ -21,6 +21,7 @@ public class SecurityConfig {
 
     /**
      * Configuración de seguridad:
+     * - Recursos estáticos: /css/**, /js/**, /images/** (sin autenticación)
      * - Rutas públicas: /login, /auth/**
      * - Rutas protegidas: /dashboard, /atm, /admin, /users
      * - Valida JWT desde cookies en todas las peticiones
@@ -32,12 +33,16 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers("/login", "/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtCookieAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .formLogin(AbstractHttpConfigurer::disable)
-                .httpBasic(AbstractHttpConfigurer::disable);
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .headers(headers -> headers
+                        .contentTypeOptions(content -> content.disable())
+                );
 
         return http.build();
     }
