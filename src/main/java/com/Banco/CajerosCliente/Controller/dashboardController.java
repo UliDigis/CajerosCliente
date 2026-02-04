@@ -15,11 +15,11 @@ import com.Banco.CajerosCliente.Service.CajeroConsultaClientService;
 
 @Controller
 @RequestMapping
-public class dashboardController {
+public class DashboardController {
 
     private final CajeroConsultaClientService cajeroConsultaClientService;
 
-    public dashboardController(CajeroConsultaClientService cajeroConsultaClientService) {
+    public DashboardController(CajeroConsultaClientService cajeroConsultaClientService) {
         this.cajeroConsultaClientService = cajeroConsultaClientService;
     }
 

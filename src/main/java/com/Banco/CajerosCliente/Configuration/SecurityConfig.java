@@ -7,6 +7,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -19,8 +20,11 @@ public class SecurityConfig {
     }
 
     /**
-     * Configuración SOLO para pruebas: - Permite cualquier request sin
-     * autenticación. - No registra el filtro JWT por cookie.
+     * Configuración de seguridad:
+     * - Rutas públicas: /login, /auth/**
+     * - Rutas protegidas: /dashboard, /atm, /admin, /users
+     * - Valida JWT desde cookies en todas las peticiones
+     * - CSRF deshabilitado para llamadas AJAX
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -28,8 +32,10 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll()
+                        .requestMatchers("/login", "/auth/**").permitAll()
+                        .anyRequest().authenticated()
                 )
+                .addFilterBefore(jwtCookieAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable);
 

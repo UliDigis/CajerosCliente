@@ -245,268 +245,173 @@
         <div th:if="${param.ok}" class="d-none" id="msgOk" th:text="${param.ok}"></div>
         <div th:if="${param.err}" class="d-none" id="msgErr" th:text="${param.err}"></div>
 
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="/js/api-client.js"></script>
+        <script>
+            let atmModalInstance = null;
+            const atmSession = {
+                codigoCajero: null,
+                tarjeta: null,
+                nip: null,
+                idCuenta: null
+            };
 
-        <script th:inline="javascript">
-                                    const ATM_API = "http://localhost:8080";
-                                    let atmModalInstance = null;
+            function openAtmModal(btn) {
+                atmSession.codigoCajero = btn.dataset.codigo;
+                document.getElementById("atmCodigoTitle").textContent = atmSession.codigoCajero;
+                atmHardReset();
+                const modalEl = document.getElementById("atmModal");
+                atmModalInstance = new bootstrap.Modal(modalEl);
+                atmModalInstance.show();
+            }
 
-                                    // Estado de la sesión
-                                    const atmSession = {
-                                        codigoCajero: null,
-                                        tarjeta: null,
-                                        nip: null,
-                                        idCuenta: null
-                                    };
+            function atmHardReset() {
+                document.getElementById("atmTarjeta").value = "";
+                document.getElementById("atmNip").value = "";
+                document.getElementById("atmMonto").value = "";
+                document.getElementById("atmStepLogin").classList.remove("d-none");
+                document.getElementById("atmStepOperacion").classList.add("d-none");
+                document.getElementById("atmRetiroResult").classList.add("d-none");
+                document.getElementById("atmMsgBox").classList.add("d-none");
+                atmSession.tarjeta = null;
+                atmSession.nip = null;
+                atmSession.idCuenta = null;
+            }
 
-                                    // ---- UI HELPERS ----
-                                    function setLoading(btnId, isLoading) {
-                                        const btn = document.getElementById(btnId);
-                                        if (!btn)
-                                            return;
-                                        if (isLoading) {
-                                            btn.disabled = true;
-                                            btn.dataset.originalText = btn.innerHTML;
-                                            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
-                                        } else {
-                                            btn.disabled = false;
-                                            btn.innerHTML = btn.dataset.originalText || 'Continuar';
-                                        }
-                                    }
+            function atmLogout() { atmHardReset(); }
+            function atmResetInputs() {
+                document.getElementById("atmTarjeta").value = "";
+                document.getElementById("atmNip").value = "";
+                document.getElementById("atmMsgBox").classList.add("d-none");
+            }
 
-                                    function formatMoney(v) {
-                                        if (v == null)
-                                            return "$0.00";
-                                        const n = Number(v);
-                                        return isNaN(n) ? v : n.toLocaleString("es-MX", {style: 'currency', currency: 'MXN'});
-                                    }
+            function showError(msg) {
+                const box = document.getElementById("atmMsgBox");
+                document.getElementById("atmMsgText").textContent = msg;
+                box.classList.remove("d-none");
+            }
 
-                                    // ---- LÓGICA PRINCIPAL ----
+            async function atmLogin() {
+                const tarjeta = document.getElementById("atmTarjeta").value.trim();
+                const nip = document.getElementById("atmNip").value.trim();
+                document.getElementById("atmMsgBox").classList.add("d-none");
 
-                                    function openAtmModal(btn) {
-                                        const codigo = btn.getAttribute("data-codigo");
-                                        const saldo = btn.getAttribute("data-saldo");
-                                        const estado = btn.getAttribute("data-estado");
+                if (!tarjeta || !nip) {
+                    showError("Ingrese tarjeta y NIP.");
+                    return;
+                }
 
-                                        atmSession.codigoCajero = codigo;
+                const btn = document.getElementById("btnLogin");
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Autenticando...';
 
-                                        document.getElementById("atmCodigoTitle").textContent = codigo;
-                                        atmHardReset(); // Limpia todo al abrir
+                try {
+                    const response = await authenticateCard(tarjeta, nip);
+                    if (!response.success) {
+                        throw new Error(response.error?.message || "Credenciales inválidas");
+                    }
 
-                                        const modalEl = document.getElementById("atmModal");
-                                        atmModalInstance = new bootstrap.Modal(modalEl);
-                                        atmModalInstance.show();
-                                    }
+                    atmSession.tarjeta = tarjeta;
+                    atmSession.nip = nip;
+                    atmSession.idCuenta = response.data.cuentaId;
 
-                                    function atmHardReset() {
-                                        // Reiniciar Inputs
-                                        document.getElementById("atmTarjeta").value = "";
-                                        document.getElementById("atmNip").value = "";
-                                        document.getElementById("atmMonto").value = "";
+                    document.getElementById("atmUsuarioId").textContent = response.data.usuarioId;
+                    document.getElementById("atmRolNombre").textContent = response.data.rolNombre;
 
-                                        // Reiniciar Vistas
-                                        document.getElementById("atmStepLogin").classList.remove("d-none");
-                                        document.getElementById("atmStepOperacion").classList.add("d-none");
-                                        document.getElementById("atmRetiroResult").classList.add("d-none");
-                                        document.getElementById("atmMsgBox").classList.add("d-none");
+                    const saldoResp = await getBalance(atmSession.idCuenta);
+                    if (saldoResp.success) {
+                        document.getElementById("atmSaldoCuenta").textContent = formatCurrency(saldoResp.data.saldoCentavos);
+                    }
 
-                                        // Reiniciar Datos
-                                        atmSession.tarjeta = null;
-                                        atmSession.nip = null;
-                                        atmSession.idCuenta = null;
-                                    }
+                    document.getElementById("atmStepLogin").classList.add("d-none");
+                    document.getElementById("atmStepOperacion").classList.remove("d-none");
+                } catch (e) {
+                    showError(e.message);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Acceder <i class="bi bi-arrow-right ms-2"></i>';
+                }
+            }
 
-                                    function atmLogout() {
-                                        atmHardReset();
-                                    }
+            async function atmRetirar() {
+                const montoStr = document.getElementById("atmMonto").value;
+                const monto = Number(montoStr);
 
-                                    function atmResetInputs() {
-                                        document.getElementById("atmTarjeta").value = "";
-                                        document.getElementById("atmNip").value = "";
-                                        document.getElementById("atmMsgBox").classList.add("d-none");
-                                    }
+                if (!monto || monto <= 0) {
+                    showError("Ingrese un monto válido mayor a 0.");
+                    return;
+                }
 
-                                    async function atmLogin() {
-                                        const tarjeta = document.getElementById("atmTarjeta").value.trim();
-                                        const nip = document.getElementById("atmNip").value.trim();
-                                        const msgBox = document.getElementById("atmMsgBox");
+                const btn = document.getElementById("btnRetirar");
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
 
-                                        msgBox.classList.add("d-none");
+                try {
+                    const montoCentavos = toCentavos(monto);
+                    const response = await withdraw(atmSession.codigoCajero, atmSession.tarjeta, atmSession.nip, montoCentavos);
 
-                                        if (!tarjeta || !nip) {
-                                            showError("Ingrese tarjeta y NIP.");
-                                            return;
-                                        }
+                    if (!response.success) {
+                        throw new Error(response.error?.message || "Error en el retiro");
+                    }
 
-                                        setLoading("btnLogin", true);
+                    document.getElementById("atmRetiroMonto").textContent = formatCurrency(response.data.montoCentavos || montoCentavos);
+                    document.getElementById("atmSaldoRestante").textContent = formatCurrency(response.data.saldoRestanteCentavos);
+                    document.getElementById("atmCajeroRetiro").textContent = atmSession.codigoCajero;
 
-                                        try {
-                                            const resp = await fetch(`${ATM_API}/atm/autenticar`, {
-                                                method: "POST",
-                                                headers: {"Content-Type": "application/json"},
-                                                body: JSON.stringify({data: {tarjeta, nip}})
-                                            });
+                    if (response.data.desglose) {
+                        const tbody = document.getElementById("atmDesgloseBody");
+                        tbody.innerHTML = "";
+                        response.data.desglose.forEach(item => {
+                            const row = `<tr><td>${formatCurrency(item.valorCentavos)}</td><td class="text-end">x${item.cantidad}</td></tr>`;
+                            tbody.insertAdjacentHTML('beforeend', row);
+                        });
+                    }
 
-                                            const json = await resp.json();
+                    document.getElementById("atmStepOperacion").classList.add("d-none");
+                    document.getElementById("atmRetiroResult").classList.remove("d-none");
+                } catch (e) {
+                    showError(e.message);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-cash-stack me-2"></i>Confirmar Retiro';
+                }
+            }
 
-                                            if (!json.success && !json.ok) {
-                                                throw new Error(json.message || "Credenciales inválidas");
-                                            }
+            async function confirmRecargarUno(btn) {
+                const codigo = btn.dataset.codigo;
+                if (!confirm(`¿Recargar el cajero ${codigo}?`)) return;
 
-                                            // Guardar sesión
-                                            const data = json.data || json.result;
-                                            atmSession.tarjeta = tarjeta;
-                                            atmSession.nip = nip;
-                                            atmSession.idCuenta = data.idCuenta;
+                const btn_el = btn;
+                btn_el.disabled = true;
+                try {
+                    const response = await reloadATM(codigo);
+                    if (response.success) {
+                        alert('Cajero recargado exitosamente');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (response.error?.message || 'No se pudo recargar'));
+                    }
+                } catch (e) {
+                    alert('Error: ' + e.message);
+                } finally {
+                    btn_el.disabled = false;
+                }
+            }
 
-                                            // UI Updates
-                                            document.getElementById("atmUsuarioId").textContent = data.idUsuario || "Usuario";
-                                            document.getElementById("atmRolNombre").textContent = data.rol || "Cliente";
+            async function confirmRecargarTodos() {
+                if (!confirm('¿Recargar TODOS los cajeros?')) return;
 
-                                            // Cargar saldo
-                                            await atmLoadSaldo();
-
-                                            // Cambiar vista
-                                            document.getElementById("atmStepLogin").classList.add("d-none");
-                                            document.getElementById("atmStepOperacion").classList.remove("d-none");
-
-                                        } catch (e) {
-                                            showError(e.message);
-                                        } finally {
-                                            setLoading("btnLogin", false);
-                                        }
-                                    }
-
-                                    async function atmLoadSaldo() {
-                                        try {
-                                            const resp = await fetch(`${ATM_API}/atm/saldo/${atmSession.idCuenta}`);
-                                            const json = await resp.json();
-                                            if (json.data) {
-                                                document.getElementById("atmSaldoCuenta").textContent = formatMoney(json.data.saldo);
-                                            }
-                                        } catch (e) {
-                                            console.error(e);
-                                        }
-                                    }
-
-                                    async function atmRetirar() {
-                                        const montoStr = document.getElementById("atmMonto").value;
-                                        const monto = Number(montoStr);
-
-                                        if (!monto || monto <= 0) {
-                                            showError("Ingrese un monto válido mayor a 0.");
-                                            return;
-                                        }
-
-                                        setLoading("btnRetirar", true);
-
-                                        // Convertir a centavos (lógica de tu backend)
-                                        const montoCentavos = Math.round(monto * 100);
-
-                                        try {
-                                            const resp = await fetch(`${ATM_API}/atm/retirar`, {
-                                                method: "POST",
-                                                headers: {"Content-Type": "application/json"},
-                                                body: JSON.stringify({
-                                                    data: {
-                                                        codigoCajero: atmSession.codigoCajero,
-                                                        tarjeta: atmSession.tarjeta,
-                                                        nip: atmSession.nip,
-                                                        montoCentavos: montoCentavos
-                                                    }
-                                                })
-                                            });
-
-                                            const json = await resp.json();
-
-                                            if (!json.success && !json.ok) {
-                                                throw new Error(json.message || "Saldo insuficiente o error de cajero");
-                                            }
-
-                                            const resData = json.data || json.result;
-
-                                            // Llenar recibo
-                                            document.getElementById("atmCajeroRetiro").textContent = resData.codigoCajero;
-                                            document.getElementById("atmRetiroMonto").textContent = formatMoney(resData.monto);
-                                            document.getElementById("atmSaldoRestante").textContent = formatMoney(resData.saldoRestante);
-
-                                            renderDesglose(resData.desglose);
-
-                                            // Mostrar resultado
-                                            document.getElementById("atmStepOperacion").classList.add("d-none");
-                                            document.getElementById("atmRetiroResult").classList.remove("d-none");
-
-                                        } catch (e) {
-                                            showError(e.message);
-                                        } finally {
-                                            setLoading("btnRetirar", false);
-                                        }
-                                    }
-
-                                    function renderDesglose(desglose) {
-                                        const tbody = document.getElementById("atmDesgloseBody");
-                                        tbody.innerHTML = "";
-                                        if (!desglose || desglose.length === 0)
-                                            return;
-
-                                        desglose.forEach(item => {
-                                            const val = item.valor || (item.valorCentavos / 100);
-                                            const row = `<tr>
-                        <td>${formatMoney(val)}</td>
-                        <td class="text-end">x${item.cantidad}</td>
-                    </tr>`;
-                                            tbody.insertAdjacentHTML('beforeend', row);
-                                        });
-                                    }
-
-                                    function showError(msg) {
-                                        const box = document.getElementById("atmMsgBox");
-                                        document.getElementById("atmMsgText").textContent = msg;
-                                        box.classList.remove("d-none");
-                                    }
-
-                                    // SweetAlerts globales para redirecciones
-                                    document.addEventListener("DOMContentLoaded", () => {
-                                        const ok = document.getElementById("msgOk")?.textContent;
-                                        const err = document.getElementById("msgErr")?.textContent;
-                                        if (ok)
-                                            Swal.fire({icon: 'success', title: 'Éxito', text: ok, timer: 2000, showConfirmButton: false});
-                                        if (err)
-                                            Swal.fire({icon: 'error', title: 'Error', text: err});
-                                    });
-
-                                    // SweetAlert Confirmaciones
-                                    function confirmRecargarUno(btn) {
-                                        const nombre = btn.dataset.nombre;
-                                        const formId = 'formRecargar_' + btn.dataset.codigo;
-
-                                        Swal.fire({
-                                            title: '¿Recargar Cajero?',
-                                            text: `Se repondrá el efectivo al máximo en ${nombre}`,
-                                            icon: 'question',
-                                            showCancelButton: true,
-                                            confirmButtonText: 'Sí, recargar',
-                                            confirmButtonColor: '#ffc107',
-                                            cancelButtonText: 'Cancelar'
-                                        }).then((r) => {
-                                            if (r.isConfirmed)
-                                                document.getElementById(formId).submit();
-                                        });
-                                    }
-
-                                    function confirmRecargarTodos() {
-                                        Swal.fire({
-                                            title: '¿Recarga Masiva?',
-                                            text: 'Esto afectará a TODOS los cajeros activos.',
-                                            icon: 'warning',
-                                            showCancelButton: true,
-                                            confirmButtonText: 'Ejecutar masiva',
-                                            confirmButtonColor: '#dc3545'
-                                        }).then((r) => {
-                                            if (r.isConfirmed)
-                                                document.getElementById("formRecargarTodos").submit();
-                                        });
-                                    }
+                try {
+                    const response = await reloadAllATMs();
+                    if (response.success) {
+                        alert('Recarga masiva completada');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (response.error?.message || 'Error en recarga masiva'));
+                    }
+                } catch (e) {
+                    alert('Error: ' + e.message);
+                }
+            }
         </script>
     </th:block>
 </html>

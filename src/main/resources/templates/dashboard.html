@@ -226,29 +226,69 @@
             </div>
         </div>
 
+        <script src="/js/api-client.js"></script>
         <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                const rechargeModal = document.getElementById('rechargeModal');
-                if (rechargeModal) {
-                    rechargeModal.addEventListener('show.bs.modal', event => {
-                        const button = event.relatedTarget;
-                        const code = button.getAttribute('data-atm-code');
-                        const balance = button.getAttribute('data-atm-balance');
-
-                        // Actualizar textos
-                        document.getElementById('atmCodeLabel').textContent = code;
-                        document.getElementById('atmBalanceLabel').textContent = balance;
-
-                        // Actualizar Action del Formulario reemplazando __codigo__
-                        // Nota: Tu Controller debe esperar /atms/{codigo}/recargar
-                        const form = document.getElementById('rechargeForm');
-                        const originalAction = form.getAttribute('th:action') || '/atms/__codigo__/recargar';
-                        // Truco para JS: usaremos una base fija si el th:action ya fue procesado por Thymeleaf 
-                        // pero necesitamos reemplazar dinámicamente.
-                        form.action = '/atms/' + code + '/recargar';
-                    });
+            // Cargar lista de cajeros por AJAX
+            async function loadATMs() {
+                try {
+                    const response = await getATMs();
+                    if (response.success && response.data) {
+                        const tbody = document.querySelector('table tbody');
+                        tbody.innerHTML = '';
+                        response.data.forEach(atm => {
+                            const row = `
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center" style="width:32px;height:32px">
+                                                <i class="bi bi-bank2 small"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold text-dark">${atm.codigoCajero}</div>
+                                                <div class="small text-muted">ID: ${atm.idCajero}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-end font-monospace fw-bold text-dark">${formatCurrency(atm.saldoCentavos)}</td>
+                                    <td class="text-center">
+                                        <span class="badge rounded-pill border ${atm.estado === 1 ? 'text-bg-success border-success-subtle' : 'text-bg-secondary border-secondary-subtle'}">
+                                            <i class="bi me-1 ${atm.estado === 1 ? 'bi-wifi' : 'bi-wifi-off'}"></i>
+                                            ${atm.estado === 1 ? 'En Línea' : 'Fuera de Servicio'}
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <button class="btn btn-sm btn-outline-warning" onclick="rechargeATM('${atm.codigoCajero}', ${atm.saldoCentavos})">
+                                            <i class="bi bi-cash-coin me-1"></i> Recargar
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                            tbody.insertAdjacentHTML('beforeend', row);
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error cargando cajeros:', e);
                 }
-            });
+            }
+
+            async function rechargeATM(codigo, saldo) {
+                if (!confirm(`¿Recargar el cajero ${codigo}?`)) return;
+
+                try {
+                    const response = await reloadATM(codigo);
+                    if (response.success) {
+                        alert('Cajero recargado exitosamente');
+                        loadATMs();
+                    } else {
+                        alert('Error: ' + (response.error?.message || 'No se pudo recargar'));
+                    }
+                } catch (e) {
+                    alert('Error: ' + e.message);
+                }
+            }
+
+            // Cargar al iniciar página
+            document.addEventListener('DOMContentLoaded', loadATMs);
         </script>
 
     </th:block>

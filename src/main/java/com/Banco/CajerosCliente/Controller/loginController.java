@@ -11,11 +11,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequestMapping("/login")
-public class loginController {
+public class LoginController {
 
     private final AuthClientService authClientService;
 
-    public loginController(AuthClientService authClientService) {
+    public LoginController(AuthClientService authClientService) {
         this.authClientService = authClientService;
     }
 

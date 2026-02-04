@@ -1,22 +1,13 @@
 package com.Banco.CajerosCliente.Controller;
 
-import java.util.List;
-import java.util.Map;
-
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
 
-import com.Banco.CajerosCliente.Service.CajeroConsultaClientService;
-
+/**
+ * Controlador auxiliar para vistas de ATM.
+ * Las vistas se renderizan desde DashboardController.
+ */
 @Controller
 public class AtmViewController {
-
-    private final CajeroConsultaClientService cajeroService;
-
-    public AtmViewController(CajeroConsultaClientService cajeroService) {
-        this.cajeroService = cajeroService;
-    }
     /**
      * Renderiza la vista de cajeros. En pruebas no se usa token.
      */
