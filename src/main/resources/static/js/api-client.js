@@ -40,7 +40,7 @@ async function apiCall(method, url, data = null) {
  */
 async function login(correo, password) {
     return apiCall('POST', `${API_BASE}/auth/login`, {
-        data: { correo, password }
+        data: {correo, password}
     });
 }
 
@@ -70,7 +70,7 @@ async function getAuthMe() {
  */
 async function authenticateCard(tarjeta, nip) {
     return apiCall('POST', `${API_BASE}/atm/autenticar`, {
-        data: { tarjeta, nip }
+        data: {tarjeta, nip}
     });
 }
 
@@ -110,7 +110,7 @@ async function withdraw(codigoCajero, tarjeta, nip, montoCentavos) {
             'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-            data: { codigoCajero, tarjeta, nip, montoCentavos }
+            data: {codigoCajero, tarjeta, nip, montoCentavos}
         })
     };
 
@@ -170,7 +170,8 @@ async function reloadAllATMs() {
  * @returns {string}
  */
 function formatCurrency(centavos) {
-    if (!centavos) return '$0.00';
+    if (!centavos)
+        return '$0.00';
     return '$' + (centavos / 100).toFixed(2);
 }
 
