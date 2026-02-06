@@ -143,7 +143,7 @@
 
             <aside class="app-sidebar d-none d-lg-flex">
                 <div class="p-4">
-                    <a href="#" class="brand-logo">
+                    <a th:href="@{/atms}" class="brand-logo">
                         <div class="brand-icon"><i class="bi bi-bank2"></i></div>
                         <span>Banco Forjadores</span>
                     </a>
@@ -174,7 +174,7 @@
                     <div class="d-flex align-items-center gap-3 px-2">
                         <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
                              style="width: 38px; height: 38px; font-size: 0.9rem;">
-                            <span sec:authentication="name" th:remove="tag">U</span>
+                            <i class="bi bi-person" aria-hidden="true"></i>
                         </div>
                         <div class="overflow-hidden">
                             <div class="fw-semibold text-truncate" sec:authentication="name" style="font-size: 0.9rem;">Usuario</div>
@@ -241,5 +241,6 @@
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     </body>
 </html>

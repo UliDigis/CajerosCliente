@@ -21,20 +21,22 @@ public class RetiroClientService {
     }
 
     /**
-     * Llama al endpoint /retiro del SERVICE para ejecutar un retiro
+     * Llama al endpoint /atm/retirar del SERVICE para ejecutar un retiro
      */
     public RetiroResponse ejecutarRetiro(String codigoCajero, String numeroTarjeta, 
                                          String nip, long montoCentavos, String token) {
 
         ApiRequest req = new ApiRequest(Map.of(
                 "codigoCajero", codigoCajero,
+                // El Service espera "tarjeta". Mandamos también "numeroTarjeta" por compatibilidad.
+                "tarjeta", numeroTarjeta,
                 "numeroTarjeta", numeroTarjeta,
                 "nip", nip,
                 "montoCentavos", montoCentavos
         ));
 
         RestClient.RequestHeadersSpec<?> requestSpec = restClient.post()
-                .uri("/retiro")
+                .uri("/atm/retirar")
                 .body(req);
 
         if (token != null && !token.isBlank()) {
@@ -47,8 +49,7 @@ public class RetiroClientService {
             throw new RuntimeException("Respuesta nula del servicio de retiros");
         }
         if (!res.isSuccess()) {
-            throw new RuntimeException(res.getError() != null ? res.getError().toString()
-                    : "Operación de retiro rechazada");
+            throw new RuntimeException(extractErrorMessage(res.getError(), "Operación de retiro rechazada"));
         }
         if (res.getData() == null) {
             throw new RuntimeException("Respuesta sin datos de retiro");
@@ -72,5 +73,19 @@ public class RetiroClientService {
         }
 
         return retiro;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static String extractErrorMessage(Object error, String fallback) {
+        if (error == null) {
+            return fallback;
+        }
+        if (error instanceof Map<?, ?> map) {
+            Object msg = ((Map<String, Object>) map).get("message");
+            if (msg != null) {
+                return msg.toString();
+            }
+        }
+        return error.toString();
     }
 }

@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout-auth :: layout('Prohibido | Banco Forjadores', ~{::content})}">
+
+    <th:block th:fragment="content">
+        <div class="text-center">
+            <div class="display-6 fw-bold text-primary mb-2">403</div>
+            <div class="h5 fw-semibold mb-2">Acceso denegado</div>
+            <p class="text-muted mb-4">No tienes permisos para ver esta página.</p>
+
+            <a class="btn btn-outline-primary" th:href="@{/atms}">Volver</a>
+            <form th:action="@{/login/logout}" method="post" class="d-inline-block ms-2">
+                <button class="btn btn-primary" type="submit">Cerrar sesión</button>
+            </form>
+        </div>
+    </th:block>
+</html>
+

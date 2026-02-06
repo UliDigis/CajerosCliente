@@ -200,7 +200,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                     </div>
 
-                    <form th:action="@{/atms/__codigo__/recargar}" method="post" id="rechargeForm">
+                    <form action="#" method="post" id="rechargeForm">
                         <div class="modal-body">
                             <div class="alert alert-info d-flex align-items-center p-2 mb-3">
                                 <i class="bi bi-info-circle me-2 fs-4"></i>
@@ -226,8 +226,49 @@
             </div>
         </div>
 
-        <script src="/js/api-client.js"></script>
+        <script src="/js/api-client.js?v=2"></script>
         <script>
+            // Modal Recarga (solo si se usa la tabla renderizada por Thymeleaf)
+            (() => {
+                const modalEl = document.getElementById('rechargeModal');
+                const form = document.getElementById('rechargeForm');
+                const codeLabel = document.getElementById('atmCodeLabel');
+                const balanceLabel = document.getElementById('atmBalanceLabel');
+
+                if (!modalEl || !form || !codeLabel || !balanceLabel) return;
+
+                let selectedAtmCode = null;
+
+                modalEl.addEventListener('show.bs.modal', (event) => {
+                    const button = event.relatedTarget;
+                    if (!button) return;
+
+                    selectedAtmCode = button.getAttribute('data-atm-code');
+                    const balance = button.getAttribute('data-atm-balance');
+
+                    codeLabel.textContent = selectedAtmCode || '---';
+                    balanceLabel.textContent = balance ? Number(balance).toFixed(2) : '0.00';
+                });
+
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    if (!selectedAtmCode) return;
+
+                    try {
+                        const response = await reloadATM(selectedAtmCode);
+                        if (response.success) {
+                            const modal = bootstrap.Modal.getInstance(modalEl);
+                            if (modal) modal.hide();
+                            loadATMs();
+                        } else {
+                            alert('Error: ' + (response.error?.message || response.error || 'No se pudo recargar'));
+                        }
+                    } catch (err) {
+                        alert('Error: ' + (err?.message || err));
+                    }
+                });
+            })();
+
             // Cargar lista de cajeros por AJAX
             async function loadATMs() {
                 try {

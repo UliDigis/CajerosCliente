@@ -17,13 +17,13 @@ public class WebConfig implements WebMvcConfigurer {
         // Configurar CSS
         registry.addResourceHandler("/css/**")
                 .addResourceLocations("classpath:/static/css/")
-                .setCacheControl(CacheControl.maxAge(365, TimeUnit.DAYS).cachePublic())
+                .setCacheControl(CacheControl.noCache())
                 .resourceChain(true);
 
         // Configurar JavaScript
         registry.addResourceHandler("/js/**")
                 .addResourceLocations("classpath:/static/js/")
-                .setCacheControl(CacheControl.maxAge(365, TimeUnit.DAYS).cachePublic())
+                .setCacheControl(CacheControl.noCache())
                 .resourceChain(true);
 
         // Configurar imágenes
@@ -35,6 +35,6 @@ public class WebConfig implements WebMvcConfigurer {
         // Otros recursos
         registry.addResourceHandler("/fonts/**")
                 .addResourceLocations("classpath:/static/fonts/")
-                .setCacheControl(CacheControl.maxAge(365, TimeUnit.DAYS).cachePublic());
+                .setCacheControl(CacheControl.noCache());
     }
 }

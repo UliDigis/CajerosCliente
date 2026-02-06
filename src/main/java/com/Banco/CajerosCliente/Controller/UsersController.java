@@ -15,14 +15,8 @@ public class UsersController {
      */
     @GetMapping("/users")
     public String users(Model model) {
-
-        List<Map<String, Object>> usuarios = List.of(
-                Map.of("id", 1, "correo", "admin@banco.com", "rol", "ADMIN", "estado", "ACTIVO"),
-                Map.of("id", 2, "correo", "cliente@banco.com", "rol", "CLIENTE", "estado", "ACTIVO"),
-                Map.of("id", 3, "correo", "soporte@banco.com", "rol", "ADMIN", "estado", "INACTIVO")
-        );
-
-        model.addAttribute("usuarios", usuarios);
+        // Se carga dinámicamente por AJAX desde /api/usuarios.
+        model.addAttribute("users", List.<Map<String, Object>>of());
         return "users";
     }
 }

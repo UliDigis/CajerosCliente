@@ -54,7 +54,7 @@
 
         <div class="row g-4">
             <div class="col-12 col-md-6 col-xl-4" th:each="atm : ${atms}">
-                <div class="card atm-card shadow-sm h-100">
+                <div class="card atm-card shadow-sm h-100" th:attr="data-atm-code=${atm.codigoCajero}">
                     <div class="card-body p-4 d-flex flex-column">
 
                         <div class="d-flex justify-content-between align-items-start mb-3">
@@ -68,22 +68,22 @@
                                 </div>
                             </div>
                             <div class="d-flex align-items-center gap-1 bg-light px-2 py-1 rounded-pill border">
-                                <span class="status-dot" 
+                                <span class="status-dot js-atm-status-dot"
                                       th:classappend="${atm.estado == 1 ? 'bg-success' : 'bg-danger'}"></span>
-                                <span class="small fw-semibold text-secondary" 
+                                <span class="small fw-semibold text-secondary js-atm-status-text"
                                       th:text="${atm.estado == 1 ? 'En Línea' : 'Fuera de Servicio'}">ACTIVO</span>
                             </div>
                         </div>
 
                         <div class="mb-4">
                             <small class="text-secondary text-uppercase fw-semibold" style="font-size: 0.75rem;">Efectivo Disponible</small>
-                            <div class="fs-3 fw-bold text-dark" 
-                                 th:text="${'$' + #numbers.formatDecimal(atm.saldo, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+                            <div class="fs-3 fw-bold text-dark js-atm-cash" 
+                                 th:text="${'$' + #numbers.formatDecimal(((atm.saldoCentavos != null ? atm.saldoCentavos : 0) / 100.0), 1, 'COMMA', 2, 'POINT')}">$0.00</div>
                         </div>
 
                         <div class="mt-auto pt-3 border-top d-grid gap-2">
 
-                            <button class="btn btn-primary"
+                            <button class="btn btn-primary js-atm-use-btn"
                                     sec:authorize="hasRole('CLIENTE')"
                                     type="button"
                                     th:attr="data-codigo=${atm.codigoCajero},data-saldo=${atm.saldo},data-estado=${atm.estado}"
@@ -173,7 +173,7 @@
                                             <div class="fs-2 fw-bold text-success" id="atmSaldoCuenta">$0.00</div>
                                         </div>
                                         <div class="text-end">
-                                            <div class="badge bg-light text-dark border" id="atmUsuarioId">User</div>
+                                            <div class="badge bg-light text-dark border" id="atmUsuarioNombre">Usuario</div>
                                             <div class="small text-muted mt-1" id="atmRolNombre">Rol</div>
                                         </div>
                                     </div>
@@ -245,14 +245,15 @@
         <div th:if="${param.ok}" class="d-none" id="msgOk" th:text="${param.ok}"></div>
         <div th:if="${param.err}" class="d-none" id="msgErr" th:text="${param.err}"></div>
 
-        <!--<script src="/js/api-client.js"></script>-->
+        <script src="/js/api-client.js?v=2"></script>
         <script>
             let atmModalInstance = null;
             const atmSession = {
                 codigoCajero: null,
                 tarjeta: null,
                 nip: null,
-                idCuenta: null
+                idCuenta: null,
+                atmToken: null
             };
 
             function openAtmModal(btn) {
@@ -275,6 +276,7 @@
                 atmSession.tarjeta = null;
                 atmSession.nip = null;
                 atmSession.idCuenta = null;
+                atmSession.atmToken = null;
             }
 
             function atmLogout() { atmHardReset(); }
@@ -288,6 +290,91 @@
                 const box = document.getElementById("atmMsgBox");
                 document.getElementById("atmMsgText").textContent = msg;
                 box.classList.remove("d-none");
+            }
+
+            function swalAvailable() {
+                return typeof window.Swal !== "undefined" && typeof window.Swal.fire === "function";
+            }
+
+            async function swalConfirm(title, text) {
+                if (!swalAvailable()) {
+                    return confirm(text ? `${title}\n${text}` : title);
+                }
+
+                const res = await Swal.fire({
+                    icon: "question",
+                    title,
+                    text: text || undefined,
+                    showCancelButton: true,
+                    confirmButtonText: "Sí",
+                    cancelButtonText: "Cancelar"
+                });
+                return res.isConfirmed;
+            }
+
+            async function swalError(title, text) {
+                if (!swalAvailable()) {
+                    alert(text || title);
+                    return;
+                }
+                await Swal.fire({icon: "error", title, text});
+            }
+
+            async function swalSuccess(title, text) {
+                if (!swalAvailable()) {
+                    if (text) alert(`${title}\n${text}`); else alert(title);
+                    return;
+                }
+                await Swal.fire({icon: "success", title, text, timer: 1400, showConfirmButton: false});
+            }
+
+            function setCashText(el, cents) {
+                if (!el) return;
+                el.textContent = formatCurrency(cents);
+            }
+
+            function applyAtmUpdate(cardEl, atm) {
+                if (!cardEl || !atm) return;
+
+                const cashEl = cardEl.querySelector(".js-atm-cash");
+                setCashText(cashEl, atm.saldoCentavos);
+
+                const dotEl = cardEl.querySelector(".js-atm-status-dot");
+                const textEl = cardEl.querySelector(".js-atm-status-text");
+
+                const online = Number(atm.estado) === 1;
+                if (dotEl) {
+                    dotEl.classList.toggle("bg-success", online);
+                    dotEl.classList.toggle("bg-danger", !online);
+                }
+                if (textEl) {
+                    textEl.textContent = online ? "En Línea" : "Fuera de Servicio";
+                }
+
+                // Botón cliente "Usar Cajero"
+                const useBtn = cardEl.querySelector(".js-atm-use-btn");
+                if (useBtn) {
+                    useBtn.disabled = !online;
+                    useBtn.dataset.estado = String(atm.estado);
+                    if (atm.saldo != null) {
+                        useBtn.dataset.saldo = String(atm.saldo);
+                    }
+                }
+            }
+
+            async function refreshAtmCards() {
+                try {
+                    const res = await getATMs();
+                    if (!res.success || !Array.isArray(res.data)) return;
+
+                    res.data.forEach(atm => {
+                        const cardEl = document.querySelector(`[data-atm-code="${atm.codigoCajero}"]`);
+                        applyAtmUpdate(cardEl, atm);
+                    });
+                } catch (e) {
+                    // Silencioso: es un refresh visual
+                    console.error("No se pudo refrescar cajeros:", e);
+                }
             }
 
             async function atmLogin() {
@@ -313,14 +400,22 @@
                     atmSession.tarjeta = tarjeta;
                     atmSession.nip = nip;
                     atmSession.idCuenta = response.data.cuentaId;
+                    atmSession.atmToken = response.data.token;
 
-                    document.getElementById("atmUsuarioId").textContent = response.data.usuarioId;
+                    const jwt = decodeJwtPayload(atmSession.atmToken);
+                    const displayName = jwt?.nombres
+                            || jwt?.nombre
+                            || jwt?.correo
+                            || jwt?.sub
+                            || "Usuario";
+                    document.getElementById("atmUsuarioNombre").textContent = displayName;
                     document.getElementById("atmRolNombre").textContent = response.data.rolNombre;
 
-                    const saldoResp = await getBalance(atmSession.idCuenta);
-                    if (saldoResp.success) {
-                        document.getElementById("atmSaldoCuenta").textContent = formatCurrency(saldoResp.data.saldoCentavos);
+                    const saldoResp = await getBalance(atmSession.idCuenta, atmSession.atmToken);
+                    if (!saldoResp.success) {
+                        throw new Error(saldoResp.error?.message || saldoResp.error || "No se pudo consultar saldo");
                     }
+                    document.getElementById("atmSaldoCuenta").textContent = formatCurrency(saldoResp.data.saldoCentavos);
 
                     document.getElementById("atmStepLogin").classList.add("d-none");
                     document.getElementById("atmStepOperacion").classList.remove("d-none");
@@ -337,7 +432,7 @@
                 const monto = Number(montoStr);
 
                 if (!monto || monto <= 0) {
-                    showError("Ingrese un monto válido mayor a 0.");
+                    await swalError("Monto inválido", "Ingrese un monto válido mayor a 0.");
                     return;
                 }
 
@@ -347,7 +442,7 @@
 
                 try {
                     const montoCentavos = toCentavos(monto);
-                    const response = await withdraw(atmSession.codigoCajero, atmSession.tarjeta, atmSession.nip, montoCentavos);
+                    const response = await withdraw(atmSession.codigoCajero, atmSession.tarjeta, atmSession.nip, montoCentavos, atmSession.atmToken);
 
                     if (!response.success) {
                         throw new Error(response.error?.message || "Error en el retiro");
@@ -368,8 +463,12 @@
 
                     document.getElementById("atmStepOperacion").classList.add("d-none");
                     document.getElementById("atmRetiroResult").classList.remove("d-none");
+                    await swalSuccess("Retiro exitoso");
+
+                    // Refrescar saldos de cajeros sin recargar pantalla
+                    refreshAtmCards();
                 } catch (e) {
-                    showError(e.message);
+                    await swalError("No se pudo retirar", e.message);
                 } finally {
                     btn.disabled = false;
                     btn.innerHTML = '<i class="bi bi-cash-stack me-2"></i>Confirmar Retiro';
@@ -378,40 +477,47 @@
 
             async function confirmRecargarUno(btn) {
                 const codigo = btn.dataset.codigo;
-                if (!confirm(`¿Recargar el cajero ${codigo}?`)) return;
+                const ok = await swalConfirm("¿Recargar cajero?", `¿Recargar el cajero ${codigo}?`);
+                if (!ok) return;
 
                 const btn_el = btn;
                 btn_el.disabled = true;
                 try {
                     const response = await reloadATM(codigo);
                     if (response.success) {
-                        alert('Cajero recargado exitosamente');
-                        location.reload();
+                        await swalSuccess("Cajero recargado");
+                        refreshAtmCards();
                     } else {
-                        alert('Error: ' + (response.error?.message || 'No se pudo recargar'));
+                        await swalError("Error", response.error?.message || response.error || "No se pudo recargar");
                     }
                 } catch (e) {
-                    alert('Error: ' + e.message);
+                    await swalError("Error", e.message);
                 } finally {
                     btn_el.disabled = false;
                 }
             }
 
             async function confirmRecargarTodos() {
-                if (!confirm('¿Recargar TODOS los cajeros?')) return;
+                const ok = await swalConfirm("¿Recarga masiva?", "¿Recargar TODOS los cajeros?");
+                if (!ok) return;
 
                 try {
                     const response = await reloadAllATMs();
                     if (response.success) {
-                        alert('Recarga masiva completada');
-                        location.reload();
+                        await swalSuccess("Recarga masiva completada");
+                        refreshAtmCards();
                     } else {
-                        alert('Error: ' + (response.error?.message || 'Error en recarga masiva'));
+                        await swalError("Error", response.error?.message || response.error || "Error en recarga masiva");
                     }
                 } catch (e) {
-                    alert('Error: ' + e.message);
+                    await swalError("Error", e.message);
                 }
             }
+
+            // Al cargar la página, sincroniza saldos/estados con el backend sin recargar
+            document.addEventListener("DOMContentLoaded", () => {
+                refreshAtmCards();
+            });
         </script>
     </th:block>
 </html>

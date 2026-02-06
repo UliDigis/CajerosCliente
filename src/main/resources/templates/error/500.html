@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout-auth :: layout('Error | Banco Forjadores', ~{::content})}">
+
+    <th:block th:fragment="content">
+        <div class="text-center">
+            <div class="display-6 fw-bold text-primary mb-2">500</div>
+            <div class="h5 fw-semibold mb-2">Ocurrió un error</div>
+            <p class="text-muted mb-4">Intenta nuevamente. Si el problema persiste, revisa los logs.</p>
+
+            <a class="btn btn-outline-primary" th:href="@{/atms}">Ir a cajeros</a>
+            <a class="btn btn-primary ms-2" th:href="@{/login}">Ir a login</a>
+        </div>
+    </th:block>
+</html>
+

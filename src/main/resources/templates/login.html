@@ -41,6 +41,13 @@
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
                         </div>
 
+                        <div class="alert alert-info alert-dismissible fade show d-flex align-items-center"
+                             role="alert" th:if="${param.expired}">
+                            <i class="bi bi-info-circle-fill me-2" aria-hidden="true"></i>
+                            <div class="flex-grow-1">Tu sesión expiró. Inicia sesión nuevamente.</div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                        </div>
+
                         <!-- Mensajes de error AJAX -->
                         <div class="alert alert-danger d-none" id="ajaxError" role="alert">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -48,7 +55,7 @@
                         </div>
 
                         <!-- Form -->
-                        <form id="loginForm" class="needs-validation" novalidate>
+                        <form id="loginForm" class="needs-validation" novalidate th:action="@{/login}" method="post">
 
                             <div class="mb-3">
                                 <label for="correo" class="form-label">Correo</label>
@@ -106,7 +113,6 @@
             </div>
         </div>
 
-        <script src="/js/api-client.js"></script>
         <script>
             // Toggle password visibility
             (() => {
@@ -123,22 +129,17 @@
                 });
             })();
 
-            // Login AJAX
+            // UX: evitar doble submit + spinner (submit normal a /login)
             (() => {
                 const form = document.getElementById('loginForm');
-                const correoInput = document.getElementById('correo');
-                const passwordInput = document.getElementById('password');
                 const submitBtn = document.getElementById('submitBtn');
                 const btnSpinner = document.getElementById('btnSpinner');
                 const btnLabel = document.getElementById('btnLabel');
-                const errorBox = document.getElementById('ajaxError');
-                const errorText = document.getElementById('ajaxErrorText');
 
                 form.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-
                     // Validación básica
                     if (!form.checkValidity()) {
+                        e.preventDefault();
                         form.classList.add('was-validated');
                         return;
                     }
@@ -147,33 +148,6 @@
                     submitBtn.disabled = true;
                     btnSpinner.classList.remove('d-none');
                     btnLabel.textContent = 'Ingresando...';
-                    errorBox.classList.add('d-none');
-
-                    try {
-                        // Llamar a login
-                        const response = await login(correoInput.value, passwordInput.value);
-
-                        if (response.success && response.data && response.data.token) {
-                            // Guardar token en localStorage
-                            localStorage.setItem('token', response.data.token);
-                            
-                            // Redirigir a dashboard
-                            window.location.href = '/dashboard';
-                        } else {
-                            // Mostrar error
-                            errorText.textContent = response.error?.message || 'Credenciales inválidas';
-                            errorBox.classList.remove('d-none');
-                        }
-                    } catch (error) {
-                        console.error('Error en login:', error);
-                        errorText.textContent = 'Error de conexión. Intenta nuevamente.';
-                        errorBox.classList.remove('d-none');
-                    } finally {
-                        // Ocultar spinner
-                        submitBtn.disabled = false;
-                        btnSpinner.classList.add('d-none');
-                        btnLabel.textContent = 'Entrar';
-                    }
                 });
             })();
         </script>

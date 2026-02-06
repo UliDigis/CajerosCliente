@@ -34,8 +34,13 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
             FilterChain filterChain) throws ServletException, IOException {
 
         String path = request.getServletPath();
-        if (path != null && (path.startsWith("/login") || path.startsWith("/css/") || path.startsWith("/js/") 
-                || path.startsWith("/images/") || path.startsWith("/error"))) {
+        if (path != null && (path.startsWith("/login")
+                || path.startsWith("/css/")
+                || path.startsWith("/js/")
+                || path.startsWith("/images/")
+                || path.startsWith("/fonts/")
+                || path.startsWith("/error")
+                || path.equals("/favicon.ico"))) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -65,9 +70,20 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
             if (role != null && !role.isBlank() && usuarioId != null) {
                 SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
 
+                String subject = claims.getSubject();
+                String safeSubject = isNumeric(subject) ? null : subject;
+
+                String displayName = firstNonBlank(
+                        claims.get("nombre", String.class),
+                        claims.get("nombres", String.class),
+                        claims.get("correo", String.class),
+                        safeSubject,
+                        "Usuario"
+                );
+
                 UsernamePasswordAuthenticationToken auth
                         = new UsernamePasswordAuthenticationToken(
-                                String.valueOf(usuarioId),
+                                displayName,
                                 null,
                                 List.of(authority)
                         );
@@ -94,5 +110,21 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
             }
         }
         return null;
+    }
+
+    private static String firstNonBlank(String... values) {
+        if (values == null) return null;
+        for (String v : values) {
+            if (v != null && !v.isBlank()) return v;
+        }
+        return null;
+    }
+
+    private static boolean isNumeric(String s) {
+        if (s == null || s.isBlank()) return false;
+        for (int i = 0; i < s.length(); i++) {
+            if (!Character.isDigit(s.charAt(i))) return false;
+        }
+        return true;
     }
 }

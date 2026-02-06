@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout-auth :: layout('No autorizado | Banco Forjadores', ~{::content})}">
+
+    <th:block th:fragment="content">
+        <div class="text-center">
+            <div class="display-6 fw-bold text-primary mb-2">401</div>
+            <div class="h5 fw-semibold mb-2">No autorizado</div>
+            <p class="text-muted mb-4">Necesitas iniciar sesión para continuar.</p>
+
+            <a class="btn btn-primary" th:href="@{/login}">Ir a login</a>
+        </div>
+    </th:block>
+</html>
+

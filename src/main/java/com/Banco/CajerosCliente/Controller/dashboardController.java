@@ -25,7 +25,8 @@ public class DashboardController {
 
     @GetMapping("dashboard")
     public String dashboard() {
-        return "dashboard";
+        // La pantalla principal es /atms; mantenemos /dashboard como alias simple.
+        return "redirect:/atms";
     }
 
     @GetMapping("atms")
